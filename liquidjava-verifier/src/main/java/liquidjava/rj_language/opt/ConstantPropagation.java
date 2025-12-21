@@ -47,8 +47,7 @@ public class ConstantPropagation {
                 DerivationNode previousOrigin = varOrigins.get(name);
 
                 // preserve origin if value came from previous derivation
-                DerivationNode origin = previousOrigin != null ? new VarDerivationNode(name, previousOrigin)
-                        : new VarDerivationNode(name);
+                DerivationNode origin = flattenVarOrigin(name, previousOrigin);
                 return new ValDerivationNode(value.clone(), origin);
             }
 
@@ -137,5 +136,16 @@ public class ConstantPropagation {
         } else if (origin instanceof ValDerivationNode valOrigin) {
             extractVarOrigins(valOrigin, varOrigins);
         }
+    }
+
+    /**
+     * Flattens variable derivations to avoid redundancy by collapsing var -> var chains
+     * If the origin is a VarDerivationNode, we use its variable name and origin instead
+     */
+    private static VarDerivationNode flattenVarOrigin(String varName, DerivationNode origin) {
+        if (origin instanceof VarDerivationNode varOrigin) {
+            return flattenVarOrigin(varOrigin.getVar(), varOrigin.getOrigin()); // recursively flatten
+        }
+        return origin != null ? new VarDerivationNode(varName, origin) : new VarDerivationNode(varName);
     }
 }
