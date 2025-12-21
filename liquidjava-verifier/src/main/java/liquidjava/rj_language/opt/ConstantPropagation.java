@@ -139,8 +139,8 @@ public class ConstantPropagation {
     }
 
     /**
-     * Flattens variable derivations to avoid redundancy by collapsing var -> var chains
-     * If the origin is a VarDerivationNode, we use its variable name and origin instead
+     * Flattens variable derivations to avoid redundancy by collapsing var -> var chains If the origin is a
+     * VarDerivationNode, we use its variable name and origin instead
      */
     private static VarDerivationNode flattenVarOrigin(String varName, DerivationNode origin) {
         if (origin instanceof VarDerivationNode varOrigin) {
