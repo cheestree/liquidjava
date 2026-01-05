@@ -44,8 +44,15 @@ public class Utils {
     }
 
     public static boolean isSameVariable(String var1, String var2) {
-        String name1 = var1.substring(0, var1.lastIndexOf('_'));
-        String name2 = var2.substring(0, var2.lastIndexOf('_'));
+        int index1 = var1.lastIndexOf('_');
+        int index2 = var2.lastIndexOf('_');
+        // no format
+        if (index1 < 0 || index2 < 0) {
+            return var1.equals(var2);
+        }
+        // #(.*)_n format
+        String name1 = var1.substring(0, index1);
+        String name2 = var2.substring(0, index2);
         return name1.equals(name2);
     }
 }
