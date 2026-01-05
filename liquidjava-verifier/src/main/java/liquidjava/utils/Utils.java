@@ -42,4 +42,10 @@ public class Utils {
             return unquoted.equals(refinement);
         }).findFirst().map(CtElement::getPosition).orElse(element.getPosition());
     }
+
+    public static boolean isSameVariable(String var1, String var2) {
+        String name1 = var1.substring(0, var1.lastIndexOf('_'));
+        String name2 = var2.substring(0, var2.lastIndexOf('_'));
+        return name1.equals(name2);
+    }
 }

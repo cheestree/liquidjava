@@ -9,6 +9,7 @@ import liquidjava.rj_language.opt.derivation_node.DerivationNode;
 import liquidjava.rj_language.opt.derivation_node.UnaryDerivationNode;
 import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
 import liquidjava.rj_language.opt.derivation_node.VarDerivationNode;
+import liquidjava.utils.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -139,11 +140,10 @@ public class ConstantPropagation {
     }
 
     /**
-     * Flattens variable derivations to avoid redundancy by collapsing var -> var chains If the origin is a
-     * VarDerivationNode, we use its variable name and origin instead
+     * Flattens same instance variable derivations to avoid redundancy by collapsing var -> var chains
      */
     private static VarDerivationNode flattenVarOrigin(String varName, DerivationNode origin) {
-        if (origin instanceof VarDerivationNode varOrigin) {
+        if (origin instanceof VarDerivationNode varOrigin && Utils.isSameVariable(varOrigin.getVar(), varName)) {
             return flattenVarOrigin(varOrigin.getVar(), varOrigin.getOrigin()); // recursively flatten
         }
         return origin != null ? new VarDerivationNode(varName, origin) : new VarDerivationNode(varName);
