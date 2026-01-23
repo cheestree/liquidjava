@@ -1,4 +1,7 @@
 # LiquidJava - Extending Java with Liquid Types
+[![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/AlcidesFonseca.liquid-java?label=VS%20Code&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=AlcidesFonseca.liquid-java)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.liquid-java/liquidjava-api)](https://central.sonatype.com/artifact/io.github.liquid-java/liquidjava-api)
+
 
 ![LiquidJava Banner](docs/design/figs/banner.gif)
 
