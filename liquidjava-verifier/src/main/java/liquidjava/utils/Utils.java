@@ -30,7 +30,7 @@ public class Utils {
     }
 
     public static String qualifyName(String prefix, String name) {
-        if (DEFAULT_NAMES.contains(name))
+        if (DEFAULT_NAMES.contains(name) || prefix.isEmpty())
             return name; // dont qualify
         return String.format("%s.%s", prefix, name);
     }

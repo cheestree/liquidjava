@@ -157,6 +157,9 @@ public abstract class TypeChecker extends CtScanner {
         // Set class as parameter of Ghost
         String qn = getQualifiedClassName(element);
         String sn = getSimpleClassName(element);
+        if (qn == null || sn == null)
+            return; // cannot determine class context - skip processing
+
         context.addGhostClass(sn);
         List<CtTypeReference<?>> param = Collections.singletonList(factory.Type().createReference(qn));
 
