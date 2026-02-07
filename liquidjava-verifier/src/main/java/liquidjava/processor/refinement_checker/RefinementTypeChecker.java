@@ -13,8 +13,11 @@ import liquidjava.processor.refinement_checker.general_checkers.OperationsChecke
 import liquidjava.processor.refinement_checker.object_checkers.AuxStateHandler;
 import liquidjava.rj_language.BuiltinFunctionPredicate;
 import liquidjava.rj_language.Predicate;
+import liquidjava.rj_language.ast.LiteralNull;
+import liquidjava.utils.Utils;
 import liquidjava.utils.constants.Formats;
 import liquidjava.utils.constants.Keys;
+import liquidjava.utils.constants.Ops;
 import liquidjava.utils.constants.Types;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -136,6 +139,9 @@ public class RefinementTypeChecker extends TypeChecker {
             if (refinementFound == null) {
                 refinementFound = new Predicate();
             }
+            if (Utils.isBoxedType(localVariable.getType()) && !Utils.isNullLiteral(e)) {
+                refinementFound = Predicate.createConjunction(refinementFound, Predicate.createNonNullEq());
+            }
             context.addVarToContext(varName, localVariable.getType(), new Predicate(), e);
             checkVariableRefinements(refinementFound, varName, localVariable.getType(), localVariable, localVariable);
             AuxStateHandler.addStateRefinements(this, varName, e);
@@ -219,9 +225,9 @@ public class RefinementTypeChecker extends TypeChecker {
                     Predicate.createLit(lit.getValue().toString(), type)));
 
         } else if (lit.getType().getQualifiedName().equals("java.lang.String")) {
-            // Only taking care of strings inside refinements
+            lit.putMetadata(Keys.REFINEMENT, Predicate.createNonNullEq());
         } else if (type.equals(Types.NULL)) {
-            // Skip null literals
+            lit.putMetadata(Keys.REFINEMENT, Predicate.createNullEq());
         } else {
             throw new NotImplementedException(
                     String.format("Literal of type %s not implemented:", lit.getType().getQualifiedName()));
@@ -373,12 +379,14 @@ public class RefinementTypeChecker extends TypeChecker {
     @Override
     public <T> void visitCtConstructorCall(CtConstructorCall<T> ctConstructorCall) {
         super.visitCtConstructorCall(ctConstructorCall);
+        ctConstructorCall.putMetadata(Keys.REFINEMENT, Predicate.createNonNullEq());
         mfc.getConstructorInvocationRefinements(ctConstructorCall);
     }
 
     @Override
     public <T> void visitCtNewClass(CtNewClass<T> newClass) {
         super.visitCtNewClass(newClass);
+        newClass.putMetadata(Keys.REFINEMENT, Predicate.createNonNullEq());
     }
 
     // ############################### Inner Visitors
@@ -395,6 +403,9 @@ public class RefinementTypeChecker extends TypeChecker {
             } else {
                 refinementFound = new Predicate();
             }
+        }
+        if (Utils.isBoxedType(type) && !Utils.isNullLiteral(assignment)) {
+            refinementFound = Predicate.createConjunction(refinementFound, Predicate.createNonNullEq());
         }
         Optional<VariableInstance> r = context.getLastVariableInstance(name);
         // AQUI!!

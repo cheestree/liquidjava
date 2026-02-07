@@ -3,6 +3,8 @@ package liquidjava.utils;
 import java.util.Set;
 
 import liquidjava.utils.constants.Types;
+import spoon.reflect.code.CtExpression;
+import spoon.reflect.code.CtLiteral;
 import spoon.reflect.cu.SourcePosition;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.factory.Factory;
@@ -11,6 +13,9 @@ import spoon.reflect.reference.CtTypeReference;
 public class Utils {
 
     private static final Set<String> DEFAULT_NAMES = Set.of("old", "length", "addToIndex", "getFromIndex");
+    private static final Set<String> PRIMITIVE_TYPES = Set.of("int", "boolean", "long", "short", "float", "double");
+    private static final Set<String> BOXED_TYPES = Set.of("java.lang.Integer", "java.lang.Boolean", "java.lang.Long", "java.lang.Short",
+            "java.lang.Float", "java.lang.Double");
 
     public static CtTypeReference<?> getType(String type, Factory factory) {
         // TODO: complete with other types
@@ -23,6 +28,18 @@ public class Utils {
         case Types.LIST -> factory.Type().LIST;
         default -> factory.createReference(type);
         };
+    }
+
+    public static boolean isNullLiteral(CtExpression<?> assignment) {
+        return assignment instanceof CtLiteral<?> lit && lit.getValue() == null;
+    }
+
+    public static boolean isBoxedType(CtTypeReference<?> type) {
+        return BOXED_TYPES.contains(type.getQualifiedName());
+    }
+
+    public static boolean isPrimitiveType(String type) {
+        return PRIMITIVE_TYPES.contains(type);
     }
 
     public static String getSimpleName(String name) {
