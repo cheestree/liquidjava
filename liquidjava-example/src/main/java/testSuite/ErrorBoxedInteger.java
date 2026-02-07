@@ -1,13 +1,12 @@
-// Not Found Error
+// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
 
 @SuppressWarnings("unused")
-public class ErrorAliasNotFound {
-
+public class ErrorBoxedInteger {
     public static void main(String[] args) {
-        @Refinement("UndefinedAlias(x)")
-        int x = 5;
+        @Refinement("_ > 0")
+        Integer j = -1;
     }
 }
