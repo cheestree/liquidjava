@@ -76,7 +76,6 @@ public class Predicate {
         }
     }
 
-    /** Create a predicate with the expression true */
     public Predicate(Expression e) {
         exp = e;
     }
