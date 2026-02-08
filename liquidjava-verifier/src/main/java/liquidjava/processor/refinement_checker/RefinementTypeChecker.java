@@ -13,11 +13,9 @@ import liquidjava.processor.refinement_checker.general_checkers.OperationsChecke
 import liquidjava.processor.refinement_checker.object_checkers.AuxStateHandler;
 import liquidjava.rj_language.BuiltinFunctionPredicate;
 import liquidjava.rj_language.Predicate;
-import liquidjava.rj_language.ast.LiteralNull;
 import liquidjava.utils.Utils;
 import liquidjava.utils.constants.Formats;
 import liquidjava.utils.constants.Keys;
-import liquidjava.utils.constants.Ops;
 import liquidjava.utils.constants.Types;
 
 import org.apache.commons.lang3.NotImplementedException;
