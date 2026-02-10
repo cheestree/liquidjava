@@ -123,21 +123,19 @@ public class RefinementTypeChecker extends TypeChecker {
     @Override
     public <T> void visitCtLocalVariable(CtLocalVariable<T> localVariable) {
         super.visitCtLocalVariable(localVariable);
-        // only declaration, no assignment
+        String varName = localVariable.getSimpleName();
         if (localVariable.getAssignment() == null) {
-            Optional<Predicate> a;
-            a = getRefinementFromAnnotation(localVariable);
-            context.addVarToContext(localVariable.getSimpleName(), localVariable.getType(), a.orElse(new Predicate()),
-                    localVariable);
+            // declaration with no assignment
+            Optional<Predicate> pred = getRefinementFromAnnotation(localVariable);
+            context.addVarToContext(varName, localVariable.getType(), pred.orElse(new Predicate()), localVariable);
         } else {
-            String varName = localVariable.getSimpleName();
+            // declaration with assignment
             CtExpression<?> e = localVariable.getAssignment();
-
             Predicate refinementFound = getRefinement(e);
             if (refinementFound == null) {
                 refinementFound = new Predicate();
             }
-            if (Utils.isBoxedType(localVariable.getType()) && !Utils.isNullLiteral(e)) {
+            if (!Utils.isPrimitiveType(localVariable.getType().getQualifiedName()) && !Utils.isNullLiteral(e)) {
                 refinementFound = Predicate.createConjunction(refinementFound, Predicate.createNonNullEq());
             }
             context.addVarToContext(varName, localVariable.getType(), new Predicate(), e);
@@ -402,7 +400,7 @@ public class RefinementTypeChecker extends TypeChecker {
                 refinementFound = new Predicate();
             }
         }
-        if (Utils.isBoxedType(type) && !Utils.isNullLiteral(assignment)) {
+        if (!Utils.isPrimitiveType(type.getQualifiedName()) && !Utils.isNullLiteral(assignment)) {
             refinementFound = Predicate.createConjunction(refinementFound, Predicate.createNonNullEq());
         }
         Optional<VariableInstance> r = context.getLastVariableInstance(name);
