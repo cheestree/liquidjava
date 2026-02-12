@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import liquidjava.diagnostics.errors.LJError;
+import liquidjava.diagnostics.errors.SyntaxError;
 import liquidjava.rj_language.ast.AliasInvocation;
 import liquidjava.rj_language.ast.BinaryExpression;
 import liquidjava.rj_language.ast.Expression;
