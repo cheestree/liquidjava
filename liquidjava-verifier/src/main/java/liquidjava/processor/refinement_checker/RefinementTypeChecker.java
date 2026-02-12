@@ -127,7 +127,8 @@ public class RefinementTypeChecker extends TypeChecker {
         if (localVariable.getAssignment() == null) {
             // declaration with no assignment
             Optional<Predicate> pred = getRefinementFromAnnotation(localVariable);
-            RefinedVariable v = context.addVarToContext(varName, localVariable.getType(), pred.orElse(new Predicate()), localVariable);
+            RefinedVariable v = context.addVarToContext(varName, localVariable.getType(), pred.orElse(new Predicate()),
+                    localVariable);
             getMessageFromAnnotation(localVariable).ifPresent(v::setMessage);
         } else {
             // declaration with assignment
@@ -136,7 +137,7 @@ public class RefinementTypeChecker extends TypeChecker {
             if (refinementFound == null) {
                 refinementFound = new Predicate();
             }
-            if (!Utils.isPrimitiveType(localVariable.getType().getQualifiedName()) && !Utils.isNullLiteral(e)) {
+            if (!Utils.isPrimitiveType(localVariable.getType().getQualifiedName()) && isNonNullExpr(e)) {
                 refinementFound = Predicate.createConjunction(refinementFound, Predicate.createNonNullEq());
             }
             context.addVarToContext(varName, localVariable.getType(), new Predicate(), e);
@@ -245,6 +246,14 @@ public class RefinementTypeChecker extends TypeChecker {
         if (v instanceof Variable) {
             ((Variable) v).setLocation("this");
         }
+        // if the field is not initialized and can be null, add instance to context with null equality refinement
+        if (f.getAssignment() == null && !Utils.isPrimitiveType(f.getType().getQualifiedName())) {
+            String instanceName = String.format(Formats.INSTANCE, name, context.getCounter());
+            Predicate initialRefinement = Predicate.createConjunction(ret.substituteVariable(name, instanceName),
+                    Predicate.createNullEq().substituteVariable(Keys.WILDCARD, instanceName));
+            context.addInstanceToContext(instanceName, f.getType(), initialRefinement, f);
+            context.addRefinementInstanceToVariable(name, instanceName);
+        }
     }
 
     @Override
@@ -261,9 +270,12 @@ public class RefinementTypeChecker extends TypeChecker {
             }
 
         } else if (context.hasVariable(String.format(Formats.THIS, fieldName))) {
+            // resolve to latest instance of this field for flow-sensitive refinement
             String thisName = String.format(Formats.THIS, fieldName);
+            Optional<VariableInstance> ovi = context.getLastVariableInstance(thisName);
+            String var = ovi.isPresent() ? ovi.get().getName() : thisName;
             fieldRead.putMetadata(Keys.REFINEMENT,
-                    Predicate.createEquals(Predicate.createVar(Keys.WILDCARD), Predicate.createVar(thisName)));
+                    Predicate.createEquals(Predicate.createVar(Keys.WILDCARD), Predicate.createVar(var)));
 
         } else if (fieldRead.getVariable().getSimpleName().equals("length")) {
             String targetName = fieldRead.getTarget().toString();
@@ -402,7 +414,7 @@ public class RefinementTypeChecker extends TypeChecker {
                 refinementFound = new Predicate();
             }
         }
-        if (!Utils.isPrimitiveType(type.getQualifiedName()) && !Utils.isNullLiteral(assignment)) {
+        if (!Utils.isPrimitiveType(type.getQualifiedName()) && isNonNullExpr(assignment)) {
             refinementFound = Predicate.createConjunction(refinementFound, Predicate.createNonNullEq());
         }
         Optional<VariableInstance> r = context.getLastVariableInstance(name);
@@ -434,6 +446,13 @@ public class RefinementTypeChecker extends TypeChecker {
             return getRefinement(inv);
         }
         return getRefinement(element);
+    }
+
+    private boolean isNonNullExpr(CtExpression<?> exp) {
+        if (exp == null || Utils.isNullLiteral(exp))
+            return false;
+        return exp instanceof CtLiteral<?> || exp instanceof CtConstructorCall<?> || exp instanceof CtNewArray<?>
+                || exp instanceof CtNewClass<?> || exp instanceof CtThisAccess<?>;
     }
 
     private Predicate substituteAllVariablesForLastInstance(Predicate c) {

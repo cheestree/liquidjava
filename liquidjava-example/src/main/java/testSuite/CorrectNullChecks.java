@@ -8,6 +8,17 @@ import liquidjava.specification.Refinement;
 @SuppressWarnings("unused")
 public class CorrectNullChecks {
 
+    Integer x; // implicit null
+
+    void test() {
+        mustBeNull(x);
+        x = 1; // implicit non-null after assignment
+        mustBeNotNull(x);
+    }
+
+    void mustBeNull(@Refinement("_ == null") Integer i) {}
+    void mustBeNotNull(@Refinement("_ != null") Integer i) {}
+
     void testNullInteger() {
         Integer i = null;
 
@@ -82,6 +93,9 @@ public class CorrectNullChecks {
 
         @Refinement("_ != null")
         ArrayList<String> lst = new ArrayList<>();
+
+        @Refinement("_ != null")
+        CorrectNullChecks r = this;
     }
 
     void testNullChecksInMethods() {
