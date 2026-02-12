@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.xml.transform.Source;
+
 import liquidjava.diagnostics.errors.*;
 import liquidjava.processor.context.AliasWrapper;
 import liquidjava.processor.context.Context;
@@ -28,6 +30,8 @@ import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.declaration.CtInterface;
+import spoon.reflect.declaration.CtNamedElement;
+import spoon.reflect.declaration.CtTypedElement;
 import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.CtScanner;
@@ -85,9 +89,52 @@ public abstract class TypeChecker extends CtScanner {
                 throw new InvalidRefinementError(element.getPosition(),
                         "Refinement predicate must be a boolean expression", ref.get());
             }
+            checkRefinementSatisfiability(p, element, ref.get());
             constr = Optional.of(p);
         }
         return constr;
+    }
+
+    private void checkRefinementSatisfiability(Predicate refinement, CtElement element, String refinementString)
+            throws LJError {
+        if (refinement.isBooleanTrue()) {
+            return;
+        }
+
+        context.enterContext();
+        try {
+            Predicate pred = refinement.clone();
+            CtTypeReference<?> elementType = element instanceof CtTypedElement<?> typedElement ? typedElement.getType()
+                    : null;
+            if (elementType == null)
+                return;
+
+            String oldName = element instanceof CtNamedElement named ? named.getSimpleName() : Keys.WILDCARD;
+            String newName = String.format(Formats.REF, context.getCounter());
+
+            // add var to context
+            context.addVarToContext(newName, elementType, new Predicate(), element);
+            pred = pred.substituteVariable(oldName, newName);
+
+            // if the refinement contains variables that are not in context, skip satisfiability check (e.g., old,
+            // length)
+            if (pred.getVariableNames().stream().anyMatch(name -> !context.hasVariable(name)))
+                return;
+
+            // check if false is a subtype of the refinement (the refinement is unsatisfiable)
+            Predicate falsePred = Predicate.createLit("false", Types.BOOLEAN);
+            boolean isUnsatisfiable = vcChecker.smtChecks(falsePred, pred, element.getPosition());
+            if (isUnsatisfiable) {
+                SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
+                throw new UnsatisfiableRefinementError(pos, refinementString);
+            }
+        } catch (UnsatisfiableRefinementError e) {
+            throw e;
+        } catch (LJError e) {
+            // ignore other errors
+        } finally {
+            context.exitContext();
+        }
     }
 
     @SuppressWarnings({ "rawtypes" })
