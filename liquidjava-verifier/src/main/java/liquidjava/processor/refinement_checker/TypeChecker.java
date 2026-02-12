@@ -2,11 +2,11 @@ package liquidjava.processor.refinement_checker;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import javax.xml.transform.Source;
 
 import liquidjava.diagnostics.errors.*;
 import liquidjava.processor.context.AliasWrapper;
@@ -43,6 +43,7 @@ public abstract class TypeChecker extends CtScanner {
     protected final Context context;
     protected final Factory factory;
     protected final VCChecker vcChecker;
+    private final Map<String, Boolean> refinementSatisfiabilityCache = new HashMap<>();
 
     public TypeChecker(Context context, Factory factory) {
         this.context = context;
@@ -97,8 +98,23 @@ public abstract class TypeChecker extends CtScanner {
 
     private void checkRefinementSatisfiability(Predicate refinement, CtElement element, String refinementString)
             throws LJError {
+
+        // skip if trivially true
         if (refinement.isBooleanTrue()) {
             return;
+        }
+
+        // normalize refinement for caching x > 0 and y > 0 hit same cache
+        String pattern = getRefinementPattern(refinement);
+
+        // if we already checked this refinement pattern, use cached result
+        if (refinementSatisfiabilityCache.containsKey(pattern)) {
+            boolean isSatisfiable = refinementSatisfiabilityCache.get(pattern);
+            if (!isSatisfiable) {
+                SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
+                throw new UnsatisfiableRefinementError(pos, refinementString);
+            }
+            return; // skip
         }
 
         context.enterContext();
@@ -116,14 +132,10 @@ public abstract class TypeChecker extends CtScanner {
             context.addVarToContext(newName, elementType, new Predicate(), element);
             pred = pred.substituteVariable(oldName, newName);
 
-            // if the refinement contains variables that are not in context, skip satisfiability check (e.g., old,
-            // length)
-            if (pred.getVariableNames().stream().anyMatch(name -> !context.hasVariable(name)))
-                return;
-
             // check if false is a subtype of the refinement (the refinement is unsatisfiable)
             Predicate falsePred = Predicate.createLit("false", Types.BOOLEAN);
             boolean isUnsatisfiable = vcChecker.smtChecks(falsePred, pred, element.getPosition());
+            refinementSatisfiabilityCache.put(pattern, !isUnsatisfiable);
             if (isUnsatisfiable) {
                 SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
                 throw new UnsatisfiableRefinementError(pos, refinementString);
@@ -135,6 +147,19 @@ public abstract class TypeChecker extends CtScanner {
         } finally {
             context.exitContext();
         }
+    }
+
+    private String getRefinementPattern(Predicate refinement) {
+        Predicate pattern = refinement.clone().substituteVariable(Keys.WILDCARD, "$");
+        List<String> varNames = pattern.getVariableNames();
+        HashSet<String> uniqueVars = new HashSet<>();
+        uniqueVars.addAll(varNames);
+        int i = 1;
+        for (String var : uniqueVars) {
+            pattern = pattern.substituteVariable(var, "x" + i);
+            i++;
+        }
+        return pattern.toString();
     }
 
     @SuppressWarnings({ "rawtypes" })
