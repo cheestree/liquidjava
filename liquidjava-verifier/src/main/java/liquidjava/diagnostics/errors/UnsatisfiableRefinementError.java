@@ -12,7 +12,7 @@ public class UnsatisfiableRefinementError extends LJError {
     private final String refinement;
 
     public UnsatisfiableRefinementError(SourcePosition position, String refinement) {
-        super("Unsatisfiable Refinement", "This predicate can never be true", position, null);
+        super("Unsatisfiable Refinement Error", "This predicate can never be true", position, null);
         this.refinement = refinement;
     }
 

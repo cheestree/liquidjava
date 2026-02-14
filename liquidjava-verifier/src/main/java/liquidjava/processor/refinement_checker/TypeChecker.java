@@ -118,6 +118,8 @@ public abstract class TypeChecker extends CtScanner {
                 SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
                 throw new UnsatisfiableRefinementError(pos, refinementString);
             }
+        } catch (UnsatisfiableRefinementError e) {
+            throw e;
         } catch (LJError e) {
             // ignore errors
         } finally {
