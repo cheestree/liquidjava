@@ -96,15 +96,18 @@ public abstract class TypeChecker extends CtScanner {
         return constr;
     }
 
-    private void checkRefinementSatisfiability(Predicate refinement, CtElement element, String refinementString)
+    private void checkRefinementSatisfiability(Predicate predicate, CtElement element, String refinementString)
             throws LJError {
 
         // skip if trivially true
-        if (refinement.isBooleanTrue()) {
+        if (predicate.isBooleanTrue())
             return;
-        }
 
-        // normalize refinement for caching x > 0 and y > 0 hit same cache
+        // replace _ with variable name
+        String name = element instanceof CtNamedElement named ? named.getSimpleName() : Keys.WILDCARD;
+        Predicate refinement = predicate.clone().substituteVariable(Keys.WILDCARD, name);
+
+        // normalize refinement so that equivalent refinements hit the same cache entry
         String pattern = getRefinementPattern(refinement);
 
         // if we already checked this refinement pattern, use cached result
@@ -114,49 +117,39 @@ public abstract class TypeChecker extends CtScanner {
                 SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
                 throw new UnsatisfiableRefinementError(pos, refinementString);
             }
-            return; // skip
+            return; // skip check
         }
 
+        // check if false is a subtype of the refinement (the refinement is unsatisfiable)
         context.enterContext();
         try {
-            Predicate pred = refinement.clone();
-            CtTypeReference<?> elementType = element instanceof CtTypedElement<?> typedElement ? typedElement.getType()
+            CtTypeReference<?> elementType = element instanceof CtTypedElement typedElement ? typedElement.getType()
                     : null;
-            if (elementType == null)
-                return;
+            if (elementType != null)
+                context.addVarToContext(name, elementType, new Predicate(), element);
 
-            String oldName = element instanceof CtNamedElement named ? named.getSimpleName() : Keys.WILDCARD;
-            String newName = String.format(Formats.REF, context.getCounter());
-
-            // add var to context
-            context.addVarToContext(newName, elementType, new Predicate(), element);
-            pred = pred.substituteVariable(oldName, newName);
-
-            // check if false is a subtype of the refinement (the refinement is unsatisfiable)
             Predicate falsePred = Predicate.createLit("false", Types.BOOLEAN);
-            boolean isUnsatisfiable = vcChecker.smtChecks(falsePred, pred, element.getPosition());
+            boolean isUnsatisfiable = vcChecker.smtChecks(falsePred, refinement, element.getPosition());
             refinementSatisfiabilityCache.put(pattern, !isUnsatisfiable);
             if (isUnsatisfiable) {
                 SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
                 throw new UnsatisfiableRefinementError(pos, refinementString);
             }
-        } catch (UnsatisfiableRefinementError e) {
-            throw e;
         } catch (LJError e) {
-            // ignore other errors
+            // ignore errors
         } finally {
             context.exitContext();
         }
     }
 
     private String getRefinementPattern(Predicate refinement) {
-        Predicate pattern = refinement.clone().substituteVariable(Keys.WILDCARD, "$");
+        Predicate pattern = refinement.clone();
         List<String> varNames = pattern.getVariableNames();
         HashSet<String> uniqueVars = new HashSet<>();
         uniqueVars.addAll(varNames);
         int i = 1;
         for (String var : uniqueVars) {
-            pattern = pattern.substituteVariable(var, "x" + i);
+            pattern = pattern.substituteVariable(var, "#" + i);
             i++;
         }
         return pattern.toString();
