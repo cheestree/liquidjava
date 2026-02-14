@@ -2,8 +2,6 @@ package liquidjava.processor.refinement_checker;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +41,6 @@ public abstract class TypeChecker extends CtScanner {
     protected final Context context;
     protected final Factory factory;
     protected final VCChecker vcChecker;
-    private final Map<String, Boolean> refinementSatisfiabilityCache = new HashMap<>();
 
     public TypeChecker(Context context, Factory factory) {
         this.context = context;
@@ -103,26 +100,13 @@ public abstract class TypeChecker extends CtScanner {
         if (predicate.isBooleanTrue())
             return;
 
-        // replace _ with variable name
-        String name = element instanceof CtNamedElement named ? named.getSimpleName() : Keys.WILDCARD;
-        Predicate refinement = predicate.clone().substituteVariable(Keys.WILDCARD, name);
-
-        // normalize refinement so that equivalent refinements hit the same cache entry
-        String pattern = getRefinementPattern(refinement);
-
-        // if we already checked this refinement pattern, use cached result
-        if (refinementSatisfiabilityCache.containsKey(pattern)) {
-            boolean isSatisfiable = refinementSatisfiabilityCache.get(pattern);
-            if (!isSatisfiable) {
-                SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
-                throw new UnsatisfiableRefinementError(pos, refinementString);
-            }
-            return; // skip check
-        }
-
-        // check if false is a subtype of the refinement (the refinement is unsatisfiable)
         context.enterContext();
         try {
+            // replace _ with variable name
+            String name = element instanceof CtNamedElement named ? named.getSimpleName() : Keys.WILDCARD;
+            Predicate refinement = predicate.clone().substituteVariable(Keys.WILDCARD, name);
+
+            // check if false is a subtype of the refinement (the refinement is unsatisfiable)
             CtTypeReference<?> elementType = element instanceof CtTypedElement typedElement ? typedElement.getType()
                     : null;
             if (elementType != null)
@@ -130,7 +114,6 @@ public abstract class TypeChecker extends CtScanner {
 
             Predicate falsePred = Predicate.createLit("false", Types.BOOLEAN);
             boolean isUnsatisfiable = vcChecker.smtChecks(falsePred, refinement, element.getPosition());
-            refinementSatisfiabilityCache.put(pattern, !isUnsatisfiable);
             if (isUnsatisfiable) {
                 SourcePosition pos = Utils.getAnnotationPosition(element, refinementString);
                 throw new UnsatisfiableRefinementError(pos, refinementString);
@@ -140,19 +123,6 @@ public abstract class TypeChecker extends CtScanner {
         } finally {
             context.exitContext();
         }
-    }
-
-    private String getRefinementPattern(Predicate refinement) {
-        Predicate pattern = refinement.clone();
-        List<String> varNames = pattern.getVariableNames();
-        HashSet<String> uniqueVars = new HashSet<>();
-        uniqueVars.addAll(varNames);
-        int i = 1;
-        for (String var : uniqueVars) {
-            pattern = pattern.substituteVariable(var, "#" + i);
-            i++;
-        }
-        return pattern.toString();
     }
 
     @SuppressWarnings({ "rawtypes" })
