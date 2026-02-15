@@ -246,14 +246,6 @@ public class RefinementTypeChecker extends TypeChecker {
         if (v instanceof Variable) {
             ((Variable) v).setLocation("this");
         }
-        // if the field is not initialized and can be null, add instance to context with null equality refinement
-        if (f.getAssignment() == null && !Utils.isPrimitiveType(f.getType().getQualifiedName())) {
-            String instanceName = String.format(Formats.INSTANCE, name, context.getCounter());
-            Predicate initialRefinement = Predicate.createConjunction(ret.substituteVariable(name, instanceName),
-                    Predicate.createNullEq().substituteVariable(Keys.WILDCARD, instanceName));
-            context.addInstanceToContext(instanceName, f.getType(), initialRefinement, f);
-            context.addRefinementInstanceToVariable(name, instanceName);
-        }
     }
 
     @Override
@@ -270,13 +262,9 @@ public class RefinementTypeChecker extends TypeChecker {
             }
 
         } else if (context.hasVariable(String.format(Formats.THIS, fieldName))) {
-            // resolve to latest instance of this field for flow-sensitive refinement
             String thisName = String.format(Formats.THIS, fieldName);
-            Optional<VariableInstance> ovi = context.getLastVariableInstance(thisName);
-            String var = ovi.isPresent() ? ovi.get().getName() : thisName;
             fieldRead.putMetadata(Keys.REFINEMENT,
-                    Predicate.createEquals(Predicate.createVar(Keys.WILDCARD), Predicate.createVar(var)));
-
+                    Predicate.createEquals(Predicate.createVar(Keys.WILDCARD), Predicate.createVar(thisName)));
         } else if (fieldRead.getVariable().getSimpleName().equals("length")) {
             String targetName = fieldRead.getTarget().toString();
             fieldRead.putMetadata(Keys.REFINEMENT, Predicate.createEquals(Predicate.createVar(Keys.WILDCARD),
