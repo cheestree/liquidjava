@@ -303,17 +303,17 @@ public abstract class TypeChecker extends CtScanner {
     }
 
     public void checkSMT(Predicate expectedType, CtElement element, String customMessage) throws LJError {
-        vcChecker.processSubtyping(expectedType, context.getGhostState(), element, factory, customMessage);
+        vcChecker.processSubtyping(expectedType, context.getGhostStates(), element, factory, customMessage);
         element.putMetadata(Keys.REFINEMENT, expectedType);
     }
 
     public void checkStateSMT(Predicate prevState, Predicate expectedState, CtElement target, String moreInfo)
             throws LJError {
-        vcChecker.processSubtyping(prevState, expectedState, context.getGhostState(), target, factory);
+        vcChecker.processSubtyping(prevState, expectedState, context.getGhostStates(), target, factory);
     }
 
     public boolean checksStateSMT(Predicate prevState, Predicate expectedState, SourcePosition p) throws LJError {
-        return vcChecker.canProcessSubtyping(prevState, expectedState, context.getGhostState(), p, factory);
+        return vcChecker.canProcessSubtyping(prevState, expectedState, context.getGhostStates(), p, factory);
     }
 
     public void throwRefinementError(SourcePosition position, Predicate expectedType, Predicate foundType,

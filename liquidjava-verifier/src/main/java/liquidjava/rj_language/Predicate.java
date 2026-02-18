@@ -101,7 +101,7 @@ public class Predicate {
         Expression ref = getExpression();
 
         Map<String, AliasDTO> alias = new HashMap<>();
-        for (AliasWrapper aw : context.getAlias()) {
+        for (AliasWrapper aw : context.getAliases()) {
             alias.put(aw.getName(), aw.createAliasDTO());
         }
 

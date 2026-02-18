@@ -8,27 +8,26 @@ import spoon.reflect.reference.CtTypeReference;
 public class Context {
     private Stack<List<RefinedVariable>> ctxVars;
     private List<RefinedFunction> ctxFunctions;
-    private List<RefinedVariable> ctxSpecificVars;
-
+    private List<RefinedVariable> ctxInstanceVars;
     private final List<RefinedVariable> ctxGlobalVars;
 
     private List<GhostFunction> ghosts;
-    private Map<String, List<GhostState>> classStates;
-    private List<AliasWrapper> alias;
+    private Map<String, List<GhostState>> states;
+    private List<AliasWrapper> aliases;
 
-    public int counter;
+    private int counter;
     private static Context instance;
 
     private Context() {
         ctxVars = new Stack<>();
         ctxVars.add(new ArrayList<>());
         ctxFunctions = new ArrayList<>();
-        ctxSpecificVars = new ArrayList<>();
+        ctxInstanceVars = new ArrayList<>();
         ctxGlobalVars = new ArrayList<>();
 
-        alias = new ArrayList<>();
+        aliases = new ArrayList<>();
         ghosts = new ArrayList<>();
-        classStates = new HashMap<>();
+        states = new HashMap<>();
         counter = 0;
     }
 
@@ -41,15 +40,15 @@ public class Context {
     public void reinitializeContext() {
         ctxVars = new Stack<>();
         ctxVars.add(new ArrayList<>()); // global vars
-        ctxSpecificVars = new ArrayList<>();
+        ctxInstanceVars = new ArrayList<>();
     }
 
     public void reinitializeAllContext() {
         reinitializeContext();
         ctxFunctions = new ArrayList<>();
-        alias = new ArrayList<>();
+        aliases = new ArrayList<>();
         ghosts = new ArrayList<>();
-        classStates = new HashMap<>();
+        states = new HashMap<>();
         counter = 0;
     }
 
@@ -80,7 +79,7 @@ public class Context {
                 ret.put(var.getName(), var.getType());
             }
         }
-        for (RefinedVariable var : ctxSpecificVars)
+        for (RefinedVariable var : ctxInstanceVars)
             ret.put(var.getName(), var.getType());
         for (RefinedVariable var : ctxGlobalVars)
             ret.put(var.getName(), var.getType());
@@ -92,6 +91,10 @@ public class Context {
         RefinedVariable vi = new Variable(simpleName, location, type, c);
         vi.addSuperTypes(type.getSuperclass(), type.getSuperInterfaces());
         ctxGlobalVars.add(vi);
+    }
+
+    public List<RefinedVariable> getCtxGlobalVars() {
+        return ctxGlobalVars;
     }
 
     // ---------------------- Add variables and instances ----------------------
@@ -114,8 +117,8 @@ public class Context {
             CtElement placementInCode) {
         RefinedVariable vi = new VariableInstance(simpleName, type, c);
         vi.addPlacementInCode(PlacementInCode.createPlacement(placementInCode));
-        if (!ctxSpecificVars.contains(vi))
-            addSpecificVariable(vi);
+        if (!ctxInstanceVars.contains(vi))
+            addInstanceVariable(vi);
         return vi;
     }
 
@@ -154,7 +157,7 @@ public class Context {
                     return var;
             }
         }
-        for (RefinedVariable var : ctxSpecificVars) {
+        for (RefinedVariable var : ctxInstanceVars) {
             if (var.getName().equals(name))
                 return var;
         }
@@ -188,7 +191,7 @@ public class Context {
             if (!rv.getSuperTypes().isEmpty())
                 lvi.add(rv);
         }
-        for (RefinedVariable rv : ctxSpecificVars) {
+        for (RefinedVariable rv : ctxInstanceVars) {
             if (!rv.getSuperTypes().isEmpty())
                 lvi.add(rv);
         }
@@ -204,7 +207,7 @@ public class Context {
 
         ((Variable) vi1).addInstance((VariableInstance) vi2);
         ((VariableInstance) vi2).setParent((Variable) vi1);
-        addSpecificVariable(vi2);
+        addInstanceVariable(vi2);
     }
 
     public Optional<VariableInstance> getLastVariableInstance(String name) {
@@ -214,12 +217,28 @@ public class Context {
         return ((Variable) rv).getLastInstance();
     }
 
-    public void addSpecificVariable(RefinedVariable vi) {
-        if (!ctxSpecificVars.contains(vi)) {
-            ctxSpecificVars.add(vi);
+    public void addInstanceVariable(RefinedVariable vi) {
+        if (!ctxInstanceVars.contains(vi)) {
+            ctxInstanceVars.add(vi);
             CtTypeReference<?> type = vi.getType();
             vi.addSuperTypes(type.getSuperclass(), type.getSuperInterfaces());
         }
+    }
+
+    public Variable getVariableFromInstance(VariableInstance vi) {
+        return vi.getParent().orElse(null);
+    }
+
+    public List<RefinedVariable> getCtxVars() {
+        List<RefinedVariable> lvi = new ArrayList<>();
+        for (List<RefinedVariable> l : ctxVars) {
+            lvi.addAll(l);
+        }
+        return lvi;
+    }
+
+    public List<RefinedVariable> getCtxInstanceVars() {
+        return ctxInstanceVars;
     }
 
     // ---------------------- Variables - if information storing ----------------------
@@ -290,6 +309,10 @@ public class Context {
         return l;
     }
 
+    public List<RefinedFunction> getCtxFunctions() {
+        return ctxFunctions;
+    }
+
     // ---------------------- Ghost Predicates ----------------------
     public void addGhostFunction(GhostFunction gh) {
         ghosts.add(gh);
@@ -300,35 +323,35 @@ public class Context {
     }
 
     public void addGhostClass(String klass) {
-        if (!classStates.containsKey(klass))
-            classStates.put(klass, new ArrayList<>());
+        if (!states.containsKey(klass))
+            states.put(klass, new ArrayList<>());
     }
 
     public void addToGhostClass(String klass, GhostState gs) {
-        List<GhostState> l = classStates.get(klass);
+        List<GhostState> l = states.get(klass);
         if (!l.contains(gs))
             l.add(gs);
     }
 
     public List<GhostState> getGhostState(String s) {
-        return classStates.get(s);
+        return states.get(s);
     }
 
-    public List<GhostState> getGhostState() {
+    public List<GhostState> getGhostStates() {
         List<GhostState> lgs = new ArrayList<>();
-        for (List<GhostState> l : classStates.values())
+        for (List<GhostState> l : states.values())
             lgs.addAll(l);
         return lgs;
     }
 
     // ---------------------- Alias ----------------------
     public void addAlias(AliasWrapper aw) {
-        if (!alias.contains(aw))
-            alias.add(aw);
+        if (!aliases.contains(aw))
+            aliases.add(aw);
     }
 
-    public List<AliasWrapper> getAlias() {
-        return alias;
+    public List<AliasWrapper> getAliases() {
+        return aliases;
     }
 
     @Override
@@ -353,9 +376,5 @@ public class Context {
         for (GhostFunction f : ghosts)
             sb.append(f.toString());
         return sb.toString();
-    }
-
-    public Variable getVariableFromInstance(VariableInstance vi) {
-        return vi.getParent().orElse(null);
     }
 }

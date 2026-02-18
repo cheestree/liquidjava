@@ -8,6 +8,7 @@ import liquidjava.diagnostics.Diagnostics;
 import liquidjava.diagnostics.errors.CustomError;
 import liquidjava.diagnostics.warnings.CustomWarning;
 import liquidjava.processor.RefinementProcessor;
+import liquidjava.processor.context.ContextHistory;
 import spoon.Launcher;
 import spoon.compiler.Environment;
 import spoon.processing.ProcessingManager;
@@ -18,6 +19,7 @@ import spoon.support.QueueProcessingManager;
 public class CommandLineLauncher {
 
     private static final Diagnostics diagnostics = Diagnostics.getInstance();
+    private static final ContextHistory contextHistory = ContextHistory.getInstance();
 
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -46,6 +48,7 @@ public class CommandLineLauncher {
         System.out.println("Running LiquidJava on: " + Arrays.toString(paths).replaceAll("[\\[\\]]", ""));
 
         diagnostics.clear();
+        contextHistory.clearHistory();
         Launcher launcher = new Launcher();
         for (String path : paths) {
             if (!new File(path).exists()) {

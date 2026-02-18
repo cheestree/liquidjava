@@ -197,7 +197,7 @@ public class OperationsChecker {
                 Predicate newElemRef = elemRef.substituteVariable(Keys.WILDCARD, newName);
                 RefinedVariable newVi = rtc.getContext().addVarToContext(newName, elemVar.getType(), newElemRef,
                         elemVar);
-                rtc.getContext().addSpecificVariable(newVi);
+                rtc.getContext().addInstanceVariable(newVi);
                 returnName = newName;
             }
 

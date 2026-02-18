@@ -51,8 +51,8 @@ public class TranslatorContextToZ3 {
         };
     }
 
-    static void addAlias(List<AliasWrapper> alias, Map<String, AliasWrapper> aliasTranslation) {
-        for (AliasWrapper a : alias) {
+    static void addAliases(List<AliasWrapper> aliases, Map<String, AliasWrapper> aliasTranslation) {
+        for (AliasWrapper a : aliases) {
             aliasTranslation.put(a.getName(), a);
         }
     }
