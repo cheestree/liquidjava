@@ -220,7 +220,7 @@ public class AuxStateHandler {
         Predicate c1 = isTo ? getMissingStates(targetClass, tc, p) : p;
         Predicate c = c1.substituteVariable(Keys.THIS, name);
         c = c.changeOldMentions(nameOld, name);
-        boolean ok = tc.checksStateSMT(new Predicate(), c.negate(), e.getPosition());
+        boolean ok = tc.checkStateSMT(new Predicate(), c.negate(), e.getPosition());
         if (ok) {
             tc.throwStateConflictError(e.getPosition(), p);
         }
@@ -413,7 +413,7 @@ public class AuxStateHandler {
         Predicate expectState = stateChange.getFrom().substituteVariable(Keys.THIS, instanceName)
                 .changeOldMentions(vi.getName(), instanceName);
 
-        if (!tc.checksStateSMT(prevState, expectState, fw.getPosition())) { // Invalid field transition
+        if (!tc.checkStateSMT(prevState, expectState, fw.getPosition())) { // Invalid field transition
             tc.throwStateRefinementError(fw.getPosition(), prevState, stateChange.getFrom(), stateChange.getMessage());
             return;
         }
@@ -478,7 +478,7 @@ public class AuxStateHandler {
             }
             expectState = expectState.changeOldMentions(vi.getName(), instanceName);
 
-            found = tc.checksStateSMT(prevCheck, expectState, invocation.getPosition());
+            found = tc.checkStateSMT(prevCheck, expectState, invocation.getPosition());
             if (found && stateChange.hasTo()) {
                 String newInstanceName = String.format(Formats.INSTANCE, name, tc.getContext().getCounter());
                 Predicate transitionedState = stateChange.getTo().substituteVariable(Keys.WILDCARD, newInstanceName)
