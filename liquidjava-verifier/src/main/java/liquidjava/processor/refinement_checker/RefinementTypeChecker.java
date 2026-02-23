@@ -54,6 +54,7 @@ public class RefinementTypeChecker extends TypeChecker {
     OperationsChecker otc;
     MethodsFunctionsChecker mfc;
     Diagnostics diagnostics = Diagnostics.getInstance();
+    ContextHistory contextHistory = ContextHistory.getInstance();
 
     public RefinementTypeChecker(Context context, Factory factory) {
         super(context, factory);
@@ -95,14 +96,15 @@ public class RefinementTypeChecker extends TypeChecker {
     }
 
     @Override
-    public <T> void visitCtConstructor(CtConstructor<T> c) {
+    public <T> void visitCtConstructor(CtConstructor<T> constructor) {
         context.enterContext();
-        mfc.loadFunctionInfo(c);
+        mfc.loadFunctionInfo(constructor);
         try {
-            super.visitCtConstructor(c);
+            super.visitCtConstructor(constructor);
         } catch (LJError e) {
             diagnostics.add(e);
         }
+        contextHistory.saveContext(constructor, context);
         context.exitContext();
     }
 
@@ -116,6 +118,7 @@ public class RefinementTypeChecker extends TypeChecker {
         } catch (LJError e) {
             diagnostics.add(e);
         }
+        contextHistory.saveContext(method, context);
         context.exitContext();
     }
 
@@ -334,6 +337,7 @@ public class RefinementTypeChecker extends TypeChecker {
         context.enterContext();
         visitCtBlock(ifElement.getThenStatement());
         context.variablesSetThenIf();
+        contextHistory.saveContext(ifElement.getThenStatement(), context);
         context.exitContext();
 
         // VISIT ELSE
@@ -345,6 +349,7 @@ public class RefinementTypeChecker extends TypeChecker {
             context.enterContext();
             visitCtBlock(ifElement.getElseStatement());
             context.variablesSetElseIf();
+            contextHistory.saveContext(ifElement.getElseStatement(), context);
             context.exitContext();
         }
         // end

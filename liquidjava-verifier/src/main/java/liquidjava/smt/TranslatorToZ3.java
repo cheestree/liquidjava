@@ -44,9 +44,9 @@ public class TranslatorToZ3 implements AutoCloseable {
     public TranslatorToZ3(liquidjava.processor.context.Context c) {
         TranslatorContextToZ3.translateVariables(z3, c.getContext(), varTranslation);
         TranslatorContextToZ3.storeVariablesSubtypes(z3, c.getAllVariablesWithSupertypes(), varSuperTypes);
-        TranslatorContextToZ3.addAlias(c.getAlias(), aliasTranslation);
+        TranslatorContextToZ3.addAliases(c.getAliases(), aliasTranslation);
         TranslatorContextToZ3.addGhostFunctions(z3, c.getGhosts(), funcTranslation);
-        TranslatorContextToZ3.addGhostStates(z3, c.getGhostState(), funcTranslation);
+        TranslatorContextToZ3.addGhostStates(z3, c.getGhostStates(), funcTranslation);
     }
 
     @SuppressWarnings("unchecked")
