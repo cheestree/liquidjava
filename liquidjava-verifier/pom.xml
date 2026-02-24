@@ -264,7 +264,7 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<scope>compile</scope>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.vintage</groupId>
@@ -304,17 +304,12 @@
 			<version>0.0.4</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
-		<dependency>
-			<groupId>org.antlr</groupId>
-			<artifactId>antlr4</artifactId>
-			<version>4.7.1</version>
-		</dependency>
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
 			<version>4.7.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
