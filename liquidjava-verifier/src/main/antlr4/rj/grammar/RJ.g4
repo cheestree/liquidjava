@@ -38,6 +38,7 @@ literalExpression:
 	|	literal						#lit
 	| 	ID 							#var
 	|	functionCall				#invocation
+	|	enumCall					#enum
 	;
 
  functionCall:
@@ -54,6 +55,9 @@ ghostCall:
 
 aliasCall:
 	ID_UPPER '(' args? ')';
+
+enumCall: 
+	OBJECT_TYPE;
 
 args:	pred (',' pred)* ;
 

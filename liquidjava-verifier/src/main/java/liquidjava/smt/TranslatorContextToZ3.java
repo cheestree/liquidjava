@@ -48,7 +48,12 @@ public class TranslatorContextToZ3 {
         case "long", "java.lang.Long" -> z3.mkRealConst(name);
         case "float", "double", "java.lang.Float", "java.lang.Double" -> (FPExpr) z3.mkConst(name, z3.mkFPSort64());
         case "int[]" -> z3.mkArrayConst(name, z3.mkIntSort(), z3.mkIntSort());
-        default -> z3.mkConst(name, z3.mkUninterpretedSort(typeName));
+        case "java.lang.Enum" -> z3.mkIntConst(name);
+        default -> {
+            if (type.isEnum())
+                yield z3.mkIntConst(name);
+            yield z3.mkConst(name, z3.mkUninterpretedSort(typeName));
+        }
         };
     }
 
@@ -88,6 +93,7 @@ public class TranslatorContextToZ3 {
         case "float", "java.lang.Float" -> z3.mkFPSort32();
         case "double", "java.lang.Double" -> z3.mkFPSortDouble();
         case "int[]" -> z3.mkArraySort(z3.mkIntSort(), z3.mkIntSort());
+        case "java.lang.Enum" -> z3.getIntSort();
         case "String" -> z3.getStringSort();
         case "void" -> z3.mkUninterpretedSort("void");
         default -> z3.mkUninterpretedSort(sort);

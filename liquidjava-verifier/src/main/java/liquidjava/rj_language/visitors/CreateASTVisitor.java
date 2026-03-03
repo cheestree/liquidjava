@@ -19,6 +19,7 @@ import liquidjava.rj_language.ast.LiteralString;
 import liquidjava.rj_language.ast.UnaryExpression;
 import liquidjava.rj_language.ast.Var;
 import liquidjava.utils.Utils;
+import liquidjava.utils.constants.Formats;
 import liquidjava.utils.constants.Keys;
 
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -26,6 +27,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import rj.grammar.RJParser.AliasCallContext;
 import rj.grammar.RJParser.ArgsContext;
 import rj.grammar.RJParser.DotCallContext;
+import rj.grammar.RJParser.EnumContext;
 import rj.grammar.RJParser.ExpBoolContext;
 import rj.grammar.RJParser.ExpContext;
 import rj.grammar.RJParser.ExpGroupContext;
@@ -156,9 +158,10 @@ public class CreateASTVisitor {
             return new GroupExpression(create(((LitGroupContext) rc).literalExpression()));
         else if (rc instanceof LitContext)
             return create(((LitContext) rc).literal());
-        else if (rc instanceof VarContext) {
+        else if (rc instanceof VarContext)
             return new Var(((VarContext) rc).ID().getText());
-
+        else if (rc instanceof EnumContext) {
+            return new Var(enumCreate((EnumContext) rc));
         } else {
             return create(((InvocationContext) rc).functionCall());
         }
@@ -232,6 +235,15 @@ public class CreateASTVisitor {
                 le.add(create(oc));
             }
         return le;
+    }
+
+    private String enumCreate(EnumContext rc) {
+        String enumText = rc.enumCall().getText();
+        int lastDot = enumText.lastIndexOf('.');
+        String enumClass = enumText.substring(0, lastDot);
+        String enumConst = enumText.substring(lastDot + 1);
+        String varName = String.format(Formats.ENUM_VALUE, enumClass, enumConst);
+        return varName;
     }
 
     private Expression literalCreate(LiteralContext literalContext) throws LJError {
