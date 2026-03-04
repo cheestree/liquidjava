@@ -97,8 +97,8 @@ BOOLOP	 : '=='|'!='|'>='|'>'|'<='|'<';
 ARITHOP : '+'|'*'|'/'|'%';//|'-';
 
 BOOL    : 'true' | 'false';
+ENUM_CALL: [a-zA-Z_][a-zA-Z0-9_]* '.' [a-zA-Z_][a-zA-Z0-9_]*;
 ID_UPPER: ([A-Z][a-zA-Z0-9]*);
-ENUM_CALL: [A-Z][a-zA-Z0-9_]* '.' [A-Z][a-zA-Z0-9_]*;
 OBJECT_TYPE:
 		  (([a-zA-Z][a-zA-Z0-9]+) ('.' [a-zA-Z][a-zA-Z0-9]*)+);
 ID     	: '#'*[a-zA-Z_][a-zA-Z0-9_#]*;
