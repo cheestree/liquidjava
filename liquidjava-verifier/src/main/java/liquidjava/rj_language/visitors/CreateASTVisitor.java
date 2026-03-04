@@ -7,6 +7,7 @@ import liquidjava.diagnostics.errors.LJError;
 import liquidjava.diagnostics.errors.SyntaxError;
 import liquidjava.rj_language.ast.AliasInvocation;
 import liquidjava.rj_language.ast.BinaryExpression;
+import liquidjava.rj_language.ast.Enumerate;
 import liquidjava.rj_language.ast.Expression;
 import liquidjava.rj_language.ast.FunctionInvocation;
 import liquidjava.rj_language.ast.GroupExpression;
@@ -161,7 +162,7 @@ public class CreateASTVisitor {
         else if (rc instanceof VarContext)
             return new Var(((VarContext) rc).ID().getText());
         else if (rc instanceof EnumContext) {
-            return new Var(enumCreate((EnumContext) rc));
+            return enumCreate((EnumContext) rc);
         } else {
             return create(((InvocationContext) rc).functionCall());
         }
@@ -237,13 +238,12 @@ public class CreateASTVisitor {
         return le;
     }
 
-    private String enumCreate(EnumContext rc) {
-        String enumText = rc.enumCall().getText();
+    private Enumerate enumCreate(EnumContext enumContext) {
+        String enumText = enumContext.enumCall().getText();
         int lastDot = enumText.lastIndexOf('.');
-        String enumClass = enumText.substring(0, lastDot);
-        String enumConst = enumText.substring(lastDot + 1);
-        String varName = String.format(Formats.ENUM_VALUE, enumClass, enumConst);
-        return varName;
+        String enumTypeName = enumText.substring(0, lastDot);
+        String enumConstName = enumText.substring(lastDot + 1);
+        return new Enumerate(enumTypeName, enumConstName);
     }
 
     private Expression literalCreate(LiteralContext literalContext) throws LJError {

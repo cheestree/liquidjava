@@ -57,7 +57,7 @@ aliasCall:
 	ID_UPPER '(' args? ')';
 
 enumCall: 
-	OBJECT_TYPE;
+	ENUM_CALL;
 
 args:	pred (',' pred)* ;
 
@@ -97,6 +97,7 @@ BOOLOP	 : '=='|'!='|'>='|'>'|'<='|'<';
 ARITHOP : '+'|'*'|'/'|'%';//|'-';
 
 BOOL    : 'true' | 'false';
+ENUM_CALL: [a-zA-Z_][a-zA-Z0-9_]* '.' [a-zA-Z_][a-zA-Z0-9_]*;
 ID_UPPER: ([A-Z][a-zA-Z0-9]*);
 OBJECT_TYPE:
 		  (([a-zA-Z][a-zA-Z0-9]+) ('.' [a-zA-Z][a-zA-Z0-9]*)+);

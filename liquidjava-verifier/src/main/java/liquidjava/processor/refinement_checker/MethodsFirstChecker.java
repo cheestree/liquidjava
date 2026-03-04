@@ -126,13 +126,9 @@ public class MethodsFirstChecker extends TypeChecker {
     public <T extends Enum<?>> void visitCtEnum(CtEnum<T> enumRead) {
         String enumName = enumRead.getSimpleName();
         String qualifiedEnumName = enumRead.getQualifiedName();
-        int ordinal = 0;
-        for (CtEnumValue ev : enumRead.getEnumValues()) {
-            String varName = String.format(Formats.ENUM_VALUE, enumName, ev.getSimpleName());
-            Predicate refinement = Predicate.createEquals(Predicate.createVar(varName),
-                    Predicate.createLit(String.valueOf(ordinal), Types.INT));
-            context.addGlobalVariableToContext(varName, qualifiedEnumName, enumRead.getReference(), refinement);
-            ordinal++;
+        for (CtEnumValue<?> ev : enumRead.getEnumValues()) {
+            String varName = String.format(Formats.ENUM, enumName, ev.getSimpleName());
+            context.addGlobalVariableToContext(varName, qualifiedEnumName, enumRead.getReference(), null);
         }
         super.visitCtEnum(enumRead);
     }

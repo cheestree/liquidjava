@@ -5,6 +5,7 @@ import com.microsoft.z3.Expr;
 import liquidjava.diagnostics.errors.LJError;
 import liquidjava.rj_language.ast.AliasInvocation;
 import liquidjava.rj_language.ast.BinaryExpression;
+import liquidjava.rj_language.ast.Enumerate;
 import liquidjava.rj_language.ast.FunctionInvocation;
 import liquidjava.rj_language.ast.GroupExpression;
 import liquidjava.rj_language.ast.Ite;
@@ -119,5 +120,10 @@ public class ExpressionToZ3Visitor implements ExpressionVisitor<Expr<?>> {
         case "!" -> ctx.mkNot(exp.getExpression().accept(this));
         default -> null;
         };
+    }
+
+    @Override
+    public Expr<?> visitEnumerate(Enumerate en) throws LJError {
+        return ctx.makeEnum(en.getEnumTypeName(), en.getEnumConstantName());
     }
 }

@@ -5,5 +5,5 @@ public final class Formats {
     public static final String INSTANCE = "#%s_%d";
     public static final String THIS = "this#%s";
     public static final String RET = "#ret_%d";
-    public static final String ENUM_VALUE = "enum#%s#%s";
+    public static final String ENUM = "%s.%s";
 }
