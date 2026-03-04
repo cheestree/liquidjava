@@ -1,6 +1,7 @@
 package liquidjava.smt;
 
 import com.microsoft.z3.Context;
+import com.microsoft.z3.EnumSort;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FPExpr;
 import com.microsoft.z3.FuncDecl;
@@ -13,6 +14,8 @@ import liquidjava.processor.context.AliasWrapper;
 import liquidjava.processor.context.GhostFunction;
 import liquidjava.processor.context.GhostState;
 import liquidjava.processor.context.RefinedVariable;
+import spoon.reflect.declaration.CtEnum;
+import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 
 public class TranslatorContextToZ3 {
@@ -41,6 +44,16 @@ public class TranslatorContextToZ3 {
 
     private static Expr<?> getExpr(Context z3, String name, CtTypeReference<?> type) {
         String typeName = type.getQualifiedName();
+        
+        if (type.isEnum()) {
+            CtType<?> decl = type.getDeclaration();
+            if (decl instanceof CtEnum<?> enumDecl) {
+                String[] enumValueNames = enumDecl.getEnumValues().stream().map(ev -> ev.getSimpleName()).toArray(String[]::new);
+                EnumSort<Object> enumSort = z3.mkEnumSort(typeName, enumValueNames);
+                return z3.mkConst(name, enumSort);
+            }
+        }
+
         return switch (typeName) {
         case "int", "short", "char", "java.lang.Integer", "java.lang.Short", "java.lang.Character" -> z3
                 .mkIntConst(name);
@@ -48,12 +61,7 @@ public class TranslatorContextToZ3 {
         case "long", "java.lang.Long" -> z3.mkRealConst(name);
         case "float", "double", "java.lang.Float", "java.lang.Double" -> (FPExpr) z3.mkConst(name, z3.mkFPSort64());
         case "int[]" -> z3.mkArrayConst(name, z3.mkIntSort(), z3.mkIntSort());
-        case "java.lang.Enum" -> z3.mkIntConst(name);
-        default -> {
-            if (type.isEnum())
-                yield z3.mkIntConst(name);
-            yield z3.mkConst(name, z3.mkUninterpretedSort(typeName));
-        }
+        default -> z3.mkConst(name, z3.mkUninterpretedSort(typeName));
         };
     }
 
