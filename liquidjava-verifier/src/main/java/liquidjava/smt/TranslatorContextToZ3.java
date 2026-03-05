@@ -16,65 +16,48 @@ import liquidjava.processor.context.GhostFunction;
 import liquidjava.processor.context.GhostState;
 import liquidjava.processor.context.RefinedVariable;
 import spoon.reflect.declaration.CtEnum;
-import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 
 public class TranslatorContextToZ3 {
 
     static void translateVariables(Context z3, Map<String, CtTypeReference<?>> ctx,
-            Map<String, Expr<?>> varTranslation) {
-
+        Map<String, Expr<?>> varTranslation) {
+        // Translates all variables into z3 expressions, creating EnumSorts once per unique enum type.
         Map<String, EnumSort<?>> enumSorts = new HashMap<>();
-        translateEnums(z3, ctx, varTranslation, enumSorts);
-        translateNonEnumVariables(z3, ctx, varTranslation, enumSorts);
+
+        for (Map.Entry<String, CtTypeReference<?>> entry : ctx.entrySet()) {
+            String name = entry.getKey();
+            CtTypeReference<?> type = entry.getValue();
+
+            if (varTranslation.containsKey(name)) continue;
+
+            if (type.isEnum() && type.getDeclaration() instanceof CtEnum<?> enumDecl) {
+                EnumSort<?> enumSort = translateEnum(z3, varTranslation, enumSorts, type, enumDecl);
+                // translateEnum may have already registered name as a literal constant 
+                // (e.g. Mode.Photo), no need to overwrite
+                if (!varTranslation.containsKey(name))
+                    varTranslation.put(name, z3.mkConst(name, enumSort));
+                continue;
+            }
+            varTranslation.put(name, getExpr(z3, name, type));
+        }
 
         varTranslation.put("true", z3.mkBool(true));
         varTranslation.put("false", z3.mkBool(false));
     }
 
-    private static void translateEnums(Context z3, Map<String, CtTypeReference<?>> ctx,
-            Map<String, Expr<?>> varTranslation, Map<String, EnumSort<?>> enumSorts) {
-        // First pass: create one EnumSort per enum type and store actual enum constants
-        for (Map.Entry<String, CtTypeReference<?>> entry : ctx.entrySet()) {
-            CtTypeReference<?> type = entry.getValue();
-            if (!type.isEnum())
-                continue;
-            String typeName = type.getQualifiedName();
-            if (enumSorts.containsKey(typeName))
-                continue;
-            CtType<?> decl = type.getDeclaration();
-            if (decl instanceof CtEnum<?> enumDecl) {
-                String[] enumValueNames = enumDecl.getEnumValues().stream().map(ev -> ev.getSimpleName())
-                        .toArray(String[]::new);
-                EnumSort<?> enumSort = z3.mkEnumSort(typeName, enumValueNames);
-                enumSorts.put(typeName, enumSort);
-
-                // Store actual enum constant values (not free variables)
-                Expr<?>[] consts = enumSort.getConsts();
-                for (int i = 0; i < enumValueNames.length; i++) {
-                    String varName = enumDecl.getSimpleName() + "." + enumValueNames[i];
-                    varTranslation.put(varName, consts[i]);
-                }
-            }
-        }
-    }
-
-    private static void translateNonEnumVariables(Context z3, Map<String, CtTypeReference<?>> ctx,
-            Map<String, Expr<?>> varTranslation, Map<String, EnumSort<?>> enumSorts) {
-        // Second pass: translate non-enum variables and enum-typed variables (not constants)
-        for (Map.Entry<String, CtTypeReference<?>> entry : ctx.entrySet()) {
-            String name = entry.getKey();
-            if (varTranslation.containsKey(name))
-                continue; // Already translated as an enum constant
-            CtTypeReference<?> type = entry.getValue();
-            if (type.isEnum()) {
-                String typeName = type.getQualifiedName();
-                EnumSort<?> enumSort = enumSorts.get(typeName);
-                varTranslation.put(name, z3.mkConst(name, enumSort));
-            } else {
-                varTranslation.put(name, getExpr(z3, name, type));
-            }
-        }
+    private static EnumSort<?> translateEnum(Context z3, Map<String, Expr<?>> varTranslation, Map<String, EnumSort<?>> enumSorts, CtTypeReference<?> type, CtEnum<?> enumDecl) {
+        // Creates (and caches if needed) a z3 EnumSort for a given enum type. Registers enum literal constants 
+        // on first creation.
+        return enumSorts.computeIfAbsent(type.getQualifiedName(), k -> {
+            String[] enumValueNames = enumDecl.getEnumValues().stream()
+                    .map(ev -> ev.getSimpleName()).toArray(String[]::new);
+            EnumSort<?> enumSort = z3.mkEnumSort(k, enumValueNames);
+            Expr<?>[] consts = enumSort.getConsts();
+            for (int i = 0; i < enumValueNames.length; i++)
+                varTranslation.put(enumDecl.getSimpleName() + "." + enumValueNames[i], consts[i]);
+            return enumSort;
+        });
     }
 
     public static void storeVariablesSubtypes(Context z3, List<RefinedVariable> variables,
