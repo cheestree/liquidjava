@@ -7,20 +7,20 @@ import liquidjava.rj_language.visitors.ExpressionVisitor;
 
 public class Enum extends Expression {
 
-    private final String enumTypeName;
-    private final String enumConstantName;
+    private final String typeName;
+    private final String constName;
 
-    public Enum(String enumTypeName, String enumConstantName) {
-        this.enumTypeName = enumTypeName;
-        this.enumConstantName = enumConstantName;
+    public Enum(String typeName, String constName) {
+        this.typeName = typeName;
+        this.constName = constName;
     }
 
-    public String getEnumTypeName() {
-        return enumTypeName;
+    public String getTypeName() {
+        return typeName;
     }
 
-    public String getEnumConstantName() {
-        return enumConstantName;
+    public String getConstName() {
+        return constName;
     }
 
     @Override
@@ -45,15 +45,15 @@ public class Enum extends Expression {
 
     @Override
     public String toString() {
-        return enumTypeName + "." + enumConstantName;
+        return typeName + "." + constName;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((enumTypeName == null) ? 0 : enumTypeName.hashCode());
-        result = prime * result + ((enumConstantName == null) ? 0 : enumConstantName.hashCode());
+        result = prime * result + ((typeName == null) ? 0 : typeName.hashCode());
+        result = prime * result + ((constName == null) ? 0 : constName.hashCode());
         return result;
     }
 
@@ -64,11 +64,11 @@ public class Enum extends Expression {
         if (obj == null || getClass() != obj.getClass())
             return false;
         Enum other = (Enum) obj;
-        return enumTypeName.equals(other.enumTypeName) && enumConstantName.equals(other.enumConstantName);
+        return typeName.equals(other.typeName) && constName.equals(other.constName);
     }
 
     @Override
     public Expression clone() {
-        return new Enum(enumTypeName, enumConstantName);
+        return new Enum(typeName, constName);
     }
 }
