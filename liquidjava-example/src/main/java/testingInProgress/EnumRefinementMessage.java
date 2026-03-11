@@ -2,7 +2,7 @@ package testingInProgress;
 
 import liquidjava.specification.Refinement;
 
-public class EnumRefinementMessage {
+class EnumRefinementMessage {
     enum Mode {
         Photo, Video, Unknown
     }

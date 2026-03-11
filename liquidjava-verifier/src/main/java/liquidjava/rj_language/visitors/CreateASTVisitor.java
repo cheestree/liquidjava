@@ -239,11 +239,9 @@ public class CreateASTVisitor {
     }
 
     private Enumerate enumCreate(EnumContext enumContext) {
-        String enumText = enumContext.enumCall().getText();
-        int lastDot = enumText.lastIndexOf('.');
-        String enumTypeName = enumText.substring(0, lastDot);
-        String enumConstName = enumText.substring(lastDot + 1);
-        return new Enumerate(enumTypeName, enumConstName);
+        String enumText = enumContext.enumerate().getText();
+        String[] parts = enumText.split("\\.");
+        return new Enumerate(parts[0], parts[1]);
     }
 
     private Expression literalCreate(LiteralContext literalContext) throws LJError {

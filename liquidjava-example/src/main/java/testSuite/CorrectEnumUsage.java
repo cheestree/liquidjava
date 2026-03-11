@@ -19,15 +19,27 @@ class CorrectEnumUsage {
 	public void setMode(Mode mode) {
 		this.mode = mode;
 	}
+
+	@StateRefinement(from="photoMode(this)", to="noMode(this)")
+	@StateRefinement(from="videoMode(this)", to="noMode(this)")
+	public void resetMode() {
+		this.mode = null;
+	}
 	
 	@StateRefinement(from="photoMode(this)")
 	public void takePhoto() {}
+
+	@StateRefinement(from="videoMode(this)")
+	public void takeVideo() {}
 	
 	
 	public static void main(String[] args) {
 		// Correct
 		CorrectEnumUsage st = new CorrectEnumUsage();
-		st.setMode(Mode.Photo);
+		st.setMode(Mode.Photo);  // noMode -> photoMode
 		st.takePhoto();
+		st.resetMode();          // photoMode -> noMode
+		st.setMode(Mode.Video);  // noMode -> videoMode
+		st.takeVideo();
 	}
 }
