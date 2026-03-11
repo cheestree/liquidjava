@@ -7,7 +7,7 @@ import liquidjava.diagnostics.errors.LJError;
 import liquidjava.diagnostics.errors.SyntaxError;
 import liquidjava.rj_language.ast.AliasInvocation;
 import liquidjava.rj_language.ast.BinaryExpression;
-import liquidjava.rj_language.ast.Enumerate;
+import liquidjava.rj_language.ast.Enum;
 import liquidjava.rj_language.ast.Expression;
 import liquidjava.rj_language.ast.FunctionInvocation;
 import liquidjava.rj_language.ast.GroupExpression;
@@ -238,10 +238,10 @@ public class CreateASTVisitor {
         return le;
     }
 
-    private Enumerate enumCreate(EnumContext enumContext) {
+    private Enum enumCreate(EnumContext enumContext) {
         String enumText = enumContext.enumerate().getText();
         String[] parts = enumText.split("\\.");
-        return new Enumerate(parts[0], parts[1]);
+        return new Enum(parts[0], parts[1]);
     }
 
     private Expression literalCreate(LiteralContext literalContext) throws LJError {

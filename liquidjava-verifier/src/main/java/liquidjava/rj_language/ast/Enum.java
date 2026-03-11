@@ -5,12 +5,12 @@ import java.util.List;
 import liquidjava.diagnostics.errors.LJError;
 import liquidjava.rj_language.visitors.ExpressionVisitor;
 
-public class Enumerate extends Expression {
+public class Enum extends Expression {
 
     private final String enumTypeName;
     private final String enumConstantName;
 
-    public Enumerate(String enumTypeName, String enumConstantName) {
+    public Enum(String enumTypeName, String enumConstantName) {
         this.enumTypeName = enumTypeName;
         this.enumConstantName = enumConstantName;
     }
@@ -25,7 +25,7 @@ public class Enumerate extends Expression {
 
     @Override
     public <T> T accept(ExpressionVisitor<T> visitor) throws LJError {
-        return visitor.visitEnumerate(this);
+        return visitor.visitEnum(this);
     }
 
     @Override
@@ -63,12 +63,12 @@ public class Enumerate extends Expression {
             return true;
         if (obj == null || getClass() != obj.getClass())
             return false;
-        Enumerate other = (Enumerate) obj;
+        Enum other = (Enum) obj;
         return enumTypeName.equals(other.enumTypeName) && enumConstantName.equals(other.enumConstantName);
     }
 
     @Override
     public Expression clone() {
-        return new Enumerate(enumTypeName, enumConstantName);
+        return new Enum(enumTypeName, enumConstantName);
     }
 }

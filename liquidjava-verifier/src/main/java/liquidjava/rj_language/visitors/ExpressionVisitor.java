@@ -3,7 +3,7 @@ package liquidjava.rj_language.visitors;
 import liquidjava.diagnostics.errors.LJError;
 import liquidjava.rj_language.ast.AliasInvocation;
 import liquidjava.rj_language.ast.BinaryExpression;
-import liquidjava.rj_language.ast.Enumerate;
+import liquidjava.rj_language.ast.Enum;
 import liquidjava.rj_language.ast.FunctionInvocation;
 import liquidjava.rj_language.ast.GroupExpression;
 import liquidjava.rj_language.ast.Ite;
@@ -41,7 +41,7 @@ public interface ExpressionVisitor<T> {
 
     T visitUnaryExpression(UnaryExpression exp) throws LJError;
 
-    T visitEnumerate(Enumerate en) throws LJError;
+    T visitEnum(Enum en) throws LJError;
 
     T visitVar(Var var) throws LJError;
 }
