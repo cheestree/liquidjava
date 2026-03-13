@@ -35,29 +35,35 @@ public class TestExamples {
         boolean isDirectory = Files.isDirectory(path);
 
         // run verification
-        CommandLineLauncher.launch(path.toAbsolutePath().toString());
+        CommandLineLauncher.launch(path.toFile().toString());
 
         // verification should pass, check if any errors were found
         if (shouldPass(pathName) && diagnostics.foundError()) {
-            System.out.println("Error in: " + pathName + " --- should pass but an error was found");
+            System.out.println("Error in: " + pathName + " --- should pass but an error was found. \n"
+                    + diagnostics.getErrorOutput());
             fail();
         }
         // verification should fail, check if it failed as expected (we assume each error test has exactly one error)
         else if (shouldFail(pathName)) {
             if (!diagnostics.foundError()) {
-                System.out.println("Error in: " + pathName + " --- should fail but no errors were found");
+                System.out.println("Error in: " + pathName + " --- should fail but no errors were found. \n"
+                        + diagnostics.getErrorOutput());
                 fail();
             } else {
                 // check if expected error was found
                 Optional<String> expected = isDirectory ? getExpectedErrorFromDirectory(path)
                         : getExpectedErrorFromFile(path);
                 if (diagnostics.getErrors().size() > 1) {
-                    System.out.println("Multiple errors found in: " + pathName + " --- expected exactly one error");
+                    System.out.println("Multiple errors found in: " + pathName + " --- expected exactly one error. \n"
+                            + diagnostics.getErrorOutput());
+                    System.out.println(diagnostics.getErrorOutput());
                     fail();
                 }
                 LJError error = diagnostics.getErrors().iterator().next();
                 if (error.getPosition() == null) {
-                    System.out.println("Error in: " + pathName + " --- error has no position information");
+                    System.out.println("Error in: " + pathName + " --- error has no position information. \n"
+                            + diagnostics.getErrorOutput());
+                    System.out.println(diagnostics.getErrorOutput());
                     fail();
                 }
                 if (expected.isPresent()) {
@@ -65,7 +71,7 @@ public class TestExamples {
                     String foundError = error.getTitle();
                     if (!foundError.equalsIgnoreCase(expectedError)) {
                         System.out.println("Error in: " + pathName + " --- expected error: " + expectedError
-                                + ", but found: " + foundError);
+                                + ", but found: " + foundError + ". \n" + diagnostics.getErrorOutput());
                         fail();
                     }
                 } else {
@@ -115,7 +121,7 @@ public class TestExamples {
         CommandLineLauncher.launch(paths);
         // Check if any of the paths that should be correct found an error
         if (diagnostics.foundError()) {
-            System.out.println("Error found in files that should be correct");
+            System.out.println("Error found in files that should be correct. \n" + diagnostics.getErrorOutput());
             fail();
         }
     }
