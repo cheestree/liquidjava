@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -10,6 +9,6 @@ public class ErrorInstanceVarInRefinement {
         int a = 6;
 
         @Refinement("_ > a")
-        int b = 9;
+        int b = 9; // Refinement Error
     }
 }

@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -28,6 +27,6 @@ public class ErrorFunctionInvocation1 {
 
         @Refinement("_ > 0")
         int c = getOne();
-        c = getZero();
+        c = getZero(); // Refinement Error
     }
 }

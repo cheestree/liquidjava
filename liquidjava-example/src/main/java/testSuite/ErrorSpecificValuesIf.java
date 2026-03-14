@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -17,7 +16,7 @@ public class ErrorSpecificValuesIf {
             int c = d;
             d = 10;
             @Refinement("b > 10")
-            int b = d;
+            int b = d; // Refinement Error
         }
     }
 }

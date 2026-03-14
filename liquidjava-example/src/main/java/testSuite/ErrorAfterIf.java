@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -15,6 +14,6 @@ public class ErrorAfterIf {
             if (b > 0) pos = b;
         }
         @Refinement("_ == a || _ == b")
-        int r = pos;
+        int r = pos; // Refinement Error
     }
 }

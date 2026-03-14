@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -7,6 +6,6 @@ import liquidjava.specification.Refinement;
 public class ErrorBoxedBoolean {
     public static void main(String[] args) {
         @Refinement("_ == true")
-        Boolean b = false;
+        Boolean b = false; // Refinement Error
     }
 }

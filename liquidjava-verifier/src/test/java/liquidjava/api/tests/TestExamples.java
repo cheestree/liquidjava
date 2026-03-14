@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import liquidjava.api.CommandLineLauncher;
@@ -21,8 +20,6 @@ import liquidjava.utils.TestUtils.Pair;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import liquidjava.diagnostics.ErrorPosition;
 
 public class TestExamples {
 

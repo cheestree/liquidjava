@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -9,6 +8,6 @@ public class ErrorArithmeticFP3 {
         @Refinement("_ > 5.0")
         double a = 5.5;
         @Refinement("_ < -5.5")
-        double d = -a;
+        double d = -a; // Refinement Error
     }
 }

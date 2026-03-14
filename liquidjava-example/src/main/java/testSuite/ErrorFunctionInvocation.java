@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -14,7 +13,7 @@ public class ErrorFunctionInvocation {
 
     public static void main(String[] args) {
         @Refinement("_ > 10")
-        int p = 10;
+        int p = 10; // Refinement Error
         p = posMult(10, 4);
     }
 }

@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -7,6 +6,6 @@ import liquidjava.specification.Refinement;
 public class ErrorBoxedInteger {
     public static void main(String[] args) {
         @Refinement("_ > 0")
-        Integer j = -1;
+        Integer j = -1; // Refinement Error
     }
 }

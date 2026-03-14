@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -11,6 +10,6 @@ public class ErrorUnaryOperators {
         v--;
         @Refinement("_ >= 10")
         int s = 10;
-        s--;
+        s--; // Refinement Error
     }
 }

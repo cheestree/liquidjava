@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -16,6 +15,6 @@ public class ErrorLongUsage2 {
         long a = 9L;
 
         @Refinement("c > 40")
-        long c = doubleBiggerThanTwenty(a * 2);
+        long c = doubleBiggerThanTwenty(a * 2); // Refinement Error
     }
 }

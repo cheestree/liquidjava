@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -13,7 +12,7 @@ public class ErrorIfAssignment {
             @Refinement("b > 0")
             int b = a;
             b++;
-            a = 10;
+            a = 10; // Refinement Error
         }
     }
 }

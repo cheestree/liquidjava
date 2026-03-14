@@ -1,4 +1,3 @@
-// Invalid Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -7,7 +6,7 @@ import liquidjava.specification.Refinement;
 public class ErrorInvalidRefinement {
 
     void test() {
-        @Refinement("x")
+        @Refinement("x") // Invalid Refinement Error
         int x = 0;
     }
 }

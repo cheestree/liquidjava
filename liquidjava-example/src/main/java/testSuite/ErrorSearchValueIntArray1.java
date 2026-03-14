@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -17,6 +16,6 @@ public class ErrorSearchValueIntArray1 {
 
     public static void main(String[] args) {
         int[] arr = new int[0];
-        getIndexWithValue(arr, 0, 1000);
+        getIndexWithValue(arr, 0, 1000); // Refinement Error
     }
 }

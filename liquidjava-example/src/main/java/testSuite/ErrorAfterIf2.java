@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -13,6 +12,6 @@ public class ErrorAfterIf2 {
         }
         k = 50;
         @Refinement("_ < 10")
-        int m = k;
+        int m = k; // Refinement Error
     }
 }

@@ -1,4 +1,3 @@
-// State Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -49,6 +48,6 @@ public class ErrorTrafficLightRGB {
         ErrorTrafficLightRGB tl = new ErrorTrafficLightRGB();
         tl.transitionToAmber();
         tl.transitionToRed();
-        tl.transitionToAmber();
+        tl.transitionToAmber(); // State Refinement Error
     }
 }

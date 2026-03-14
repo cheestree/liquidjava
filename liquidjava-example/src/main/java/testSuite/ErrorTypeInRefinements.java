@@ -1,4 +1,3 @@
-// Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -10,6 +9,6 @@ public class ErrorTypeInRefinements {
         int a = 10;
 
         @Refinement("(b == 6)")
-        boolean b = true;
+        boolean b = true; // Error
     }
 }

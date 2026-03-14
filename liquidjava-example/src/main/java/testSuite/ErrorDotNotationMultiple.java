@@ -1,4 +1,3 @@
-// Syntax Error
 package testSuite;
 
 import liquidjava.specification.Ghost;
@@ -12,7 +11,7 @@ public class ErrorDotNotationMultiple {
     public ErrorDotNotationMultiple() {}
 
     void test() {
-        @Refinement("_ == this.not.size()")
+        @Refinement("_ == this.not.size()") // Syntax Error
         int x = 0;
     }
 }

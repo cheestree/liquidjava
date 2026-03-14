@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -11,7 +10,7 @@ public class ErrorInstanceVarInRefinementIf {
         if (a > 0) {
             a = -2;
             @Refinement("b < a")
-            int b = -3;
+            int b = -3; // Refinement Error
         }
     }
 }
