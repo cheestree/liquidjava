@@ -65,7 +65,7 @@ public class TestExamples {
                 if (!expected.isEmpty()) {
                     for (LJError e : diagnostics.getErrors()) {
                         String foundError = e.getTitle();
-                        int errorPosition = e.getPosition().lineStart();
+                        int errorPosition = e.getPosition().getLine();
                         boolean match = expected.stream().anyMatch(
                                 pair -> pair.errorMessage().equals(foundError) && pair.lineNumber() == errorPosition);
 
