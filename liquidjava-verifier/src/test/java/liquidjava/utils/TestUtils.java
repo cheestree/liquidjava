@@ -47,12 +47,7 @@ public class TestUtils {
                 Pattern p = Pattern.compile("//\\s*(.*?\\bError\\b)", Pattern.CASE_INSENSITIVE);
                 Matcher m = p.matcher(line);
                 if (m.find()) {
-                    String comment = m.group(1).trim();
-                    int dotIdx = comment.indexOf(":");
-                    if (dotIdx != -1) {
-                        comment = comment.substring(0, dotIdx).trim();
-                    }
-                    expectedErrors.add(new Pair<>(comment, lineNumber));
+                    expectedErrors.add(new Pair<>(m.group(1).trim(), lineNumber));
                 }
             }
         } catch (IOException e) {
