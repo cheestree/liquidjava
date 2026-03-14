@@ -12,7 +12,6 @@ import liquidjava.processor.context.GhostFunction;
 import liquidjava.processor.facade.GhostDTO;
 import liquidjava.processor.refinement_checker.general_checkers.MethodsFunctionsChecker;
 import liquidjava.rj_language.Predicate;
-import liquidjava.rj_language.parsing.RefinementsParser;
 import liquidjava.utils.Utils;
 import spoon.reflect.code.CtLiteral;
 import spoon.reflect.cu.SourcePosition;
@@ -28,8 +27,8 @@ import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 
 public class ExternalRefinementTypeChecker extends TypeChecker {
-    String prefix;
-    Diagnostics diagnostics = Diagnostics.getInstance();
+    private String prefix;
+    private final Diagnostics diagnostics = Diagnostics.getInstance();
 
     public ExternalRefinementTypeChecker(Context context, Factory factory) {
         super(context, factory);

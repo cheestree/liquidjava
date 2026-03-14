@@ -81,7 +81,7 @@ public abstract class TypeChecker extends CtScanner {
         if (ref.isPresent()) {
             Predicate p = new Predicate(ref.get(), element);
             if (!p.getExpression().isBooleanExpression()) {
-                SourcePosition position = Utils.getAnnotationPosition(element, ref.get());
+                SourcePosition position = Utils.getLJAnnotationPosition(element, ref.get());
                 throw new InvalidRefinementError(position, "Refinement predicate must be a boolean expression",
                         ref.get());
             }
@@ -152,7 +152,7 @@ public abstract class TypeChecker extends CtScanner {
                 CtLiteral<String> s = (CtLiteral<String>) ce;
                 String f = s.getValue();
                 GhostState gs = new GhostState(f, g.getParametersTypes(), factory.Type().BOOLEAN_PRIMITIVE,
-                        g.getPrefix());
+                        g.getPrefix(), Utils.getFile(element));
                 gs.setGhostParent(g);
                 gs.setRefinement(Predicate.createEquals(ip, Predicate.createLit(Integer.toString(order), Types.INT)));
                 // open(THIS) -> state1(THIS) == 1
@@ -189,7 +189,7 @@ public abstract class TypeChecker extends CtScanner {
         List<CtTypeReference<?>> param = Collections.singletonList(factory.Type().createReference(qn));
 
         CtTypeReference<?> r = factory.Type().createReference(gd.returnType());
-        GhostState gs = new GhostState(gd.name(), param, r, qn);
+        GhostState gs = new GhostState(gd.name(), param, r, qn, Utils.getFile(element));
         context.addToGhostClass(sn, gs);
     }
 

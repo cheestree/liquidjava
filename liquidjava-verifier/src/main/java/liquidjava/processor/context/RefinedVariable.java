@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import liquidjava.rj_language.Predicate;
+import spoon.reflect.declaration.CtElement;
 import spoon.reflect.reference.CtTypeReference;
 
 public abstract class RefinedVariable extends Refined {
@@ -34,8 +35,12 @@ public abstract class RefinedVariable extends Refined {
                 supertypes.add(ct);
     }
 
-    public void addPlacementInCode(PlacementInCode s) {
-        placementInCode = s;
+    public void setPlacementInCode(CtElement element) {
+        placementInCode = PlacementInCode.createPlacement(element);
+    }
+
+    public void setPlacementInScope(PlacementInCode placement) {
+        placementInCode = placement;
     }
 
     public PlacementInCode getPlacementInCode() {
