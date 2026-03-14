@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import liquidjava.diagnostics.errors.ArgumentMismatchError;
 import liquidjava.diagnostics.errors.LJError;
-import liquidjava.diagnostics.errors.SyntaxError;
 import liquidjava.processor.context.AliasWrapper;
 import liquidjava.processor.context.Context;
 import liquidjava.processor.context.GhostFunction;
@@ -88,7 +86,7 @@ public class Predicate {
             return RefinementsParser.createAST(ref, prefix);
         } catch (LJError e) {
             // add location info to error
-            SourcePosition pos = Utils.getAnnotationPosition(element, ref);
+            SourcePosition pos = Utils.getLJAnnotationPosition(element, ref);
             e.setPosition(pos);
             throw e;
         }

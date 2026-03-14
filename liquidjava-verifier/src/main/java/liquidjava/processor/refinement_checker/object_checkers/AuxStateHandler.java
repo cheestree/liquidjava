@@ -16,6 +16,7 @@ import liquidjava.utils.constants.Formats;
 import liquidjava.utils.constants.Keys;
 import liquidjava.utils.constants.Types;
 import spoon.reflect.code.*;
+import spoon.reflect.cu.SourcePosition;
 import spoon.reflect.declaration.*;
 import spoon.reflect.reference.CtTypeReference;
 
@@ -69,7 +70,7 @@ public class AuxStateHandler {
             if (to != null) {
                 Predicate p = new Predicate(to, element);
                 if (!p.getExpression().isBooleanExpression()) {
-                    throw new InvalidRefinementError(element.getPosition(),
+                    throw new InvalidRefinementError(an.getPosition(),
                             "State refinement transition must be a boolean expression", to);
                 }
                 state.setTo(p);
@@ -208,8 +209,9 @@ public class AuxStateHandler {
             boolean isTo, String prefix) throws LJError {
         Predicate p = new Predicate(value, e, prefix);
         if (!p.getExpression().isBooleanExpression()) {
-            throw new InvalidRefinementError(e.getPosition(),
-                    "State refinement transition must be a boolean expression", value);
+            SourcePosition position = Utils.getLJAnnotationPosition(e, value);
+            throw new InvalidRefinementError(position, "State refinement transition must be a boolean expression",
+                    value);
         }
         CtTypeReference<?> r = tc.getFactory().Type().createReference(targetClass);
         String nameOld = String.format(Formats.INSTANCE, Keys.THIS, tc.getContext().getCounter());
@@ -415,7 +417,7 @@ public class AuxStateHandler {
                 .changeOldMentions(vi.getName(), instanceName);
 
         if (!tc.checkStateSMT(prevState, expectState, fw.getPosition())) { // Invalid field transition
-            tc.throwStateRefinementError(fw.getPosition(), prevState, stateChange.getFrom(), stateChange.getMessage());
+            tc.throwStateRefinementError(fw.getPosition(), prevState, expectState, stateChange.getMessage());
             return;
         }
 
@@ -464,12 +466,11 @@ public class AuxStateHandler {
 
         boolean found = false;
         for (ObjectState stateChange : stateChanges) { // TODO: only working for 1 state annotation
-            if (found) {
+            if (found)
                 break;
-            }
-            if (!stateChange.hasFrom()) {
+            if (!stateChange.hasFrom())
                 continue;
-            }
+
             // replace "state(this)" to "state(whatever method is called from) and so on"
             Predicate expectState = stateChange.getFrom().substituteVariable(Keys.THIS, instanceName);
             Predicate prevCheck = prevState;
@@ -490,13 +491,17 @@ public class AuxStateHandler {
                 transitionedState = checkOldMentions(transitionedState, instanceName, newInstanceName);
                 // update of state of new instance of this#n#(whatever it was + 1)
                 addInstanceWithState(tc, name, newInstanceName, vi, transitionedState, invocation);
-                return;
             }
         }
         if (!found) { // Reaches the end of stateChange no matching states
             Predicate expectedStatesDisjunction = stateChanges.stream().filter(ObjectState::hasFrom)
                     .map(ObjectState::getFrom)
                     .reduce(Predicate.createLit("false", Types.BOOLEAN), Predicate::createDisjunction);
+            expectedStatesDisjunction = expectedStatesDisjunction.substituteVariable(Keys.THIS, instanceName);
+            for (String s : map.keySet()) {
+                expectedStatesDisjunction = expectedStatesDisjunction.substituteVariable(s, map.get(s));
+            }
+            expectedStatesDisjunction = expectedStatesDisjunction.changeOldMentions(vi.getName(), instanceName);
 
             // combine messages of all state changes
             String message = stateChanges.stream().map(ObjectState::getMessage)

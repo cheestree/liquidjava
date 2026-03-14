@@ -5,22 +5,22 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import liquidjava.utils.Utils;
 import spoon.reflect.cu.SourcePosition;
 import spoon.reflect.declaration.CtElement;
-import spoon.reflect.declaration.CtExecutable;
 
 public class ContextHistory {
     private static ContextHistory instance;
 
-    private Map<String, Map<String, Set<RefinedVariable>>> fileScopeVars; // file -> (scope -> variables in scope)
-    private Set<RefinedVariable> instanceVars;
-    private Set<RefinedVariable> globalVars;
+    private Map<String, Set<String>> fileScopes;
+    private Set<RefinedVariable> localVars;
     private Set<GhostState> ghosts;
     private Set<AliasWrapper> aliases;
+    private Set<RefinedVariable> globalVars;
 
     private ContextHistory() {
-        fileScopeVars = new HashMap<>();
-        instanceVars = new HashSet<>();
+        fileScopes = new HashMap<>();
+        localVars = new HashSet<>();
         globalVars = new HashSet<>();
         ghosts = new HashSet<>();
         aliases = new HashSet<>();
@@ -33,48 +33,40 @@ public class ContextHistory {
     }
 
     public void clearHistory() {
-        fileScopeVars.clear();
-        instanceVars.clear();
+        fileScopes.clear();
+        localVars.clear();
         globalVars.clear();
         ghosts.clear();
         aliases.clear();
     }
 
     public void saveContext(CtElement element, Context context) {
-        SourcePosition pos = element.getPosition();
-        if (pos == null || pos.getFile() == null)
+        String file = Utils.getFile(element);
+        if (file == null)
             return;
 
-        // add variables in scope for this position
-        String file = pos.getFile().getAbsolutePath();
+        // add scope
         String scope = getScopePosition(element);
-        fileScopeVars.putIfAbsent(file, new HashMap<>());
-        fileScopeVars.get(file).put(scope, new HashSet<>(context.getCtxVars()));
+        fileScopes.putIfAbsent(file, new HashSet<>());
+        fileScopes.get(file).add(scope);
 
-        // add other elements in context
-        instanceVars.addAll(context.getCtxInstanceVars());
+        // add variables, ghosts and aliases
+        localVars.addAll(context.getCtxVars());
+        localVars.addAll(context.getCtxInstanceVars());
         globalVars.addAll(context.getCtxGlobalVars());
         ghosts.addAll(context.getGhostStates());
         aliases.addAll(context.getAliases());
     }
 
-    public String getScopePosition(CtElement element) {
-        SourcePosition pos = element.getPosition();
-        SourcePosition innerPosition = pos;
-        if (element instanceof CtExecutable<?> executable) {
-            if (executable.getBody() != null)
-                innerPosition = executable.getBody().getPosition();
-        }
-        return String.format("%d:%d-%d:%d", innerPosition.getLine(), innerPosition.getColumn() + 1, pos.getEndLine(),
-                pos.getEndColumn());
+    private String getScopePosition(CtElement element) {
+        SourcePosition startPos = Utils.getRealPosition(element);
+        SourcePosition endPos = element.getPosition();
+        return String.format("%d:%d-%d:%d", startPos.getLine(), startPos.getColumn(), endPos.getEndLine(),
+                endPos.getEndColumn() - 1);
     }
 
-    public Map<String, Map<String, Set<RefinedVariable>>> getFileScopeVars() {
-        return fileScopeVars;
-    }
-
-    public Set<RefinedVariable> getInstanceVars() {
-        return instanceVars;
+    public Set<RefinedVariable> getLocalVars() {
+        return localVars;
     }
 
     public Set<RefinedVariable> getGlobalVars() {
@@ -87,5 +79,9 @@ public class ContextHistory {
 
     public Set<AliasWrapper> getAliases() {
         return aliases;
+    }
+
+    public Map<String, Set<String>> getFileScopes() {
+        return fileScopes;
     }
 }
