@@ -8,6 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestUtils {
+    /*
+     * A simple record to store an error message and its line number, used for expected errors read from test files
+     */
+    public record Pair(String errorMessage, int lineNumber) {
+        @Override
+        public String toString() {
+            return errorMessage + " at " + lineNumber;
+        };
+    }
 
     /**
      * Determines if the given path indicates that the test should pass
@@ -36,11 +45,13 @@ public class TestUtils {
      * @return list of expected error messages found in the file, or empty list if there was an error reading the file
      *         or if there are no expected error messages in the file
      */
-    public static List<String> getExpectedErrorsFromFile(Path filePath) {
-        List<String> expectedErrors = new ArrayList<>();
+    public static List<Pair> getExpectedErrorsFromFile(Path filePath) {
+        List<Pair> expectedErrors = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath)) {
             String line;
+            int lineNumber = 0;
             while ((line = reader.readLine()) != null) {
+                lineNumber++;
                 int idx = line.indexOf("//");
                 if (idx != -1 && line.substring(idx).contains("Error")) {
                     // only expects the error type, NOT the actual refinement error message, depends on deterministic
@@ -50,7 +61,7 @@ public class TestUtils {
                     if (dotIdx != -1) {
                         comment = comment.substring(0, dotIdx).trim();
                     }
-                    expectedErrors.add(comment);
+                    expectedErrors.add(new Pair(comment, lineNumber));
                 }
             }
         } catch (IOException e) {
@@ -67,8 +78,8 @@ public class TestUtils {
      * @return list of expected error messages from all files in the directory, or empty list if there was an error
      *         reading the directory or if there are no files in the directory
      */
-    public static List<String> getExpectedErrorsFromDirectory(Path dirPath) {
-        List<String> expectedErrors = new ArrayList<>();
+    public static List<Pair> getExpectedErrorsFromDirectory(Path dirPath) {
+        List<Pair> expectedErrors = new ArrayList<>();
         try {
             List<Path> files = Files.list(dirPath).filter(Files::isRegularFile).toList();
             for (Path file : files) {

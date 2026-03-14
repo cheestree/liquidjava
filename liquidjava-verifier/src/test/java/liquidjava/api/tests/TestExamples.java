@@ -1,6 +1,7 @@
 package liquidjava.api.tests;
 
 import static liquidjava.utils.TestUtils.*;
+
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -10,13 +11,18 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+
 import liquidjava.api.CommandLineLauncher;
 import liquidjava.diagnostics.Diagnostics;
 
 import liquidjava.diagnostics.errors.LJError;
+import liquidjava.utils.TestUtils.Pair;
+
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import liquidjava.diagnostics.ErrorPosition;
 
 public class TestExamples {
 
@@ -52,25 +58,26 @@ public class TestExamples {
                 fail();
             } else {
                 // check if expected error was found
-                List<String> expected = isDirectory ? getExpectedErrorsFromDirectory(path)
+                List<Pair> expected = isDirectory ? getExpectedErrorsFromDirectory(path)
                         : getExpectedErrorsFromFile(path);
                 if (diagnostics.getErrors().size() > expected.size()) {
                     System.out.println("Multiple errors found in: " + pathName + " --- expected exactly "
                             + expected.size() + " errors. \n" + diagnostics.getErrorOutput());
                     fail();
                 }
-                LJError error = diagnostics.getErrors().iterator().next();
-                if (error.getPosition() == null) {
-                    System.out.println("Error in: " + pathName + " --- error has no position information. \n"
-                            + diagnostics.getErrorOutput());
-                    fail();
-                }
                 if (!expected.isEmpty()) {
-                    String foundError = error.getTitle();
-                    if (!expected.contains(foundError)) {
-                        System.out.println("Error in: " + pathName + " --- expected errors: " + expected
-                                + ", but found: " + foundError + ". \n" + diagnostics.getErrorOutput());
-                        fail();
+                    for (LJError e : diagnostics.getErrors()) {
+                        String foundError = e.getTitle();
+                        int errorPosition = e.getPosition().lineStart();
+                        boolean match = expected.stream().anyMatch(
+                                pair -> pair.errorMessage().equals(foundError) && pair.lineNumber() == errorPosition);
+
+                        if (!match) {
+                            System.out.println("Error in: " + pathName + " --- expected errors: " + expected
+                                    + ", but found: " + foundError + " at " + errorPosition + ". \n"
+                                    + diagnostics.getErrorOutput());
+                            fail();
+                        }
                     }
                 } else {
                     System.out.println("No expected error messages found for: " + pathName);
