@@ -19,4 +19,14 @@ public class ErrorSpecificValuesIf {
             int b = d; // Refinement Error
         }
     }
+
+    public static void addZ2() {
+        @Refinement("_ > 10")
+        int a = 15;
+        if (a > 14) {
+            a = 12;
+            @Refinement("_ < 11")
+            int c = a; // Refinement Error
+        }
+    }
 }

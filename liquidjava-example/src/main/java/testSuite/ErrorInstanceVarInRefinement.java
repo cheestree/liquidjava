@@ -4,7 +4,17 @@ import liquidjava.specification.Refinement;
 
 @SuppressWarnings("unused")
 public class ErrorInstanceVarInRefinement {
-    public static void main(String[] args) {
+    public static void varInRefinement1() {
+        @Refinement("_ < 10")
+        int a = 6;
+        if (a > 0) {
+            a = -2;
+            @Refinement("b < a")
+            int b = -3; // Refinement Error
+        }
+    }
+
+    public static void varInRefinement2() {
         @Refinement("_ < 10")
         int a = 6;
 
