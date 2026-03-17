@@ -4,7 +4,7 @@ import liquidjava.specification.Refinement;
 
 public class ErrorGhostNotFound {
 
-    public void test() {
+    public static void main(String[] args) {
         @Refinement("notFound(x)")
         int x = 5; // Not Found Error
     }

@@ -7,10 +7,11 @@ import liquidjava.specification.StateRefinement;
 @Ghost("int size")
 public class ErrorDotNotationMultiple {
 
-    @StateRefinement(to="size() == 0")
-    public ErrorDotNotationMultiple() {}
+    @StateRefinement(to = "size() == 0")
+    public ErrorDotNotationMultiple() {
+    }
 
-    void test() {
+    public static void main(String[] args) {
         @Refinement("_ == this.not.size()") // Syntax Error
         int x = 0;
     }

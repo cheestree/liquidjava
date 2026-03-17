@@ -4,7 +4,7 @@ import liquidjava.specification.Refinement;
 
 @SuppressWarnings("unused")
 public class ErrorUnaryOperators {
-    public static void unaryOperator1() {
+    public static void errorUnaryOperators() {
         @Refinement("_ < 10")
         int v = 3;
         v--;
@@ -13,7 +13,7 @@ public class ErrorUnaryOperators {
         s--; // Refinement Error
     }
 
-    public static void unaryOperator2() {
+    public static void errorUnaryOperatorMinus() {
         @Refinement("b > 0")
         int b = 8;
         b = -b; // Refinement Error
