@@ -15,12 +15,10 @@ public class Diagnostics {
 
     private final LinkedHashSet<LJError> errors;
     private final LinkedHashSet<LJWarning> warnings;
-    private boolean debugMode;
 
     private Diagnostics() {
         this.errors = new LinkedHashSet<>();
         this.warnings = new LinkedHashSet<>();
-        this.debugMode = false;
     }
 
     public static Diagnostics getInstance() {
@@ -33,14 +31,6 @@ public class Diagnostics {
 
     public void add(LJWarning warning) {
         this.warnings.add(warning);
-    }
-
-    public boolean isDebugMode() {
-        return this.debugMode;
-    }
-
-    public void setDebugMode() {
-        this.debugMode = true;
     }
 
     public boolean foundError() {
