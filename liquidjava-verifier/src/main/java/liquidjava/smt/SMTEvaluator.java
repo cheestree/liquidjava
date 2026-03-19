@@ -9,11 +9,14 @@ import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
 import com.microsoft.z3.Z3Exception;
 
+import liquidjava.diagnostics.Diagnostics;
 import liquidjava.processor.context.Context;
 import liquidjava.rj_language.Predicate;
 import liquidjava.rj_language.ast.Expression;
 
 public class SMTEvaluator {
+
+    private static final Diagnostics diagnostics = Diagnostics.getInstance();
 
     /**
      * Verifies that subRef is a subtype of supRef by checking the satisfiability of subRef && !supRef. Creates a parser
@@ -27,6 +30,9 @@ public class SMTEvaluator {
      */
     public SMTResult verifySubtype(Predicate subRef, Predicate supRef, Context context) throws Exception {
         Predicate toVerify = Predicate.createConjunction(subRef, supRef.negate());
+        if (diagnostics.isDebugMode()) {
+            System.out.println("Verifying: " + toVerify);
+        }
         try {
             Expression exp = toVerify.getExpression();
             try (TranslatorToZ3 tz3 = new TranslatorToZ3(context)) {
@@ -39,6 +45,10 @@ public class SMTEvaluator {
                 if (result.equals(Status.SATISFIABLE)) {
                     Model model = solver.getModel();
                     Counterexample counterexample = tz3.getCounterexample(model);
+                    if (diagnostics.isDebugMode()) {
+                        System.out.println("Verification failed. Counterexample:");
+                        System.out.println(counterexample);
+                    }
                     return SMTResult.error(counterexample);
                 }
             }

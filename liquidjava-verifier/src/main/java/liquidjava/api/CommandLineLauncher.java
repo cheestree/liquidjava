@@ -3,12 +3,17 @@ package liquidjava.api;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import liquidjava.diagnostics.Diagnostics;
 import liquidjava.diagnostics.errors.CustomError;
 import liquidjava.diagnostics.warnings.CustomWarning;
 import liquidjava.processor.RefinementProcessor;
 import liquidjava.processor.context.ContextHistory;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 import spoon.Launcher;
 import spoon.compiler.Environment;
 import spoon.processing.ProcessingManager;
@@ -22,25 +27,43 @@ public class CommandLineLauncher {
     private static final ContextHistory contextHistory = ContextHistory.getInstance();
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("No input paths provided");
-            System.out.println("\nUsage: ./liquidjava <...paths>");
-            System.out.println("  <...paths>: Paths to be verified by LiquidJava");
-            System.out.println(
-                    "\nExample: ./liquidjava liquidjava-example/src/main/java/test liquidjava-example/src/main/java/testingInProgress/Account.java");
-            return;
+        CommandLine commandLine = new CommandLine(new CliArguments());
+        int exitCode = commandLine.execute(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
-        List<String> paths = Arrays.asList(args);
-        launch(paths.toArray(new String[0]));
+    }
 
-        // print diagnostics
-        if (diagnostics.foundWarning()) {
-            System.out.println(diagnostics.getWarningOutput());
-        }
-        if (diagnostics.foundError()) {
-            System.out.println(diagnostics.getErrorOutput());
-        } else {
+    @Command(name = "liquidjava", mixinStandardHelpOptions = true, customSynopsis = "./liquidjava <...paths> <options>")
+    private static class CliArguments implements Callable<Integer> {
+
+        @Option(names = { "-d", "--debug" }, description = "Enable debug mode for more detailed output")
+        private boolean debugMode;
+
+        @Parameters(arity = "1..*", paramLabel = "<...paths>", description = "Paths to be verified by LiquidJava")
+        private List<String> paths;
+
+        @Override
+        public Integer call() {
+            if (debugMode) {
+                System.out.println("Debug mode enabled");
+                System.out.println("Input paths: " + paths);
+                diagnostics.setDebugMode();
+            }
+
+            launch(paths.stream().toArray(String[]::new));
+
+            // print diagnostics
+            if (diagnostics.foundWarning()) {
+                System.out.println(diagnostics.getWarningOutput());
+            }
+            if (diagnostics.foundError()) {
+                System.out.println(diagnostics.getErrorOutput());
+                return 1;
+            }
+
             System.out.println("Correct! Passed Verification.");
+            return 0;
         }
     }
 
