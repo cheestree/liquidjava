@@ -10,19 +10,13 @@ import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
 
 public class ExpressionSimplifier {
 
-    private static final Diagnostics diagnostics = Diagnostics.getInstance();
-
     /**
      * Simplifies an expression by applying constant propagation, constant folding and removing redundant conjuncts
      * Returns a derivation node representing the tree of simplifications applied
      */
     public static ValDerivationNode simplify(Expression exp) {
         ValDerivationNode fixedPoint = simplifyToFixedPoint(null, exp);
-        ValDerivationNode simplified = simplifyValDerivationNode(fixedPoint);
-        if (diagnostics.isDebugMode()) {
-            System.out.println("Simplified expression: original: " + exp + " | simplified: " + simplified.getValue());
-        }
-        return simplified;
+        return simplifyValDerivationNode(fixedPoint);
     }
 
     /**

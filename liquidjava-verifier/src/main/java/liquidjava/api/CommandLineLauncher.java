@@ -2,8 +2,6 @@ package liquidjava.api;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 import liquidjava.diagnostics.Diagnostics;
 import liquidjava.diagnostics.errors.CustomError;
@@ -11,9 +9,6 @@ import liquidjava.diagnostics.warnings.CustomWarning;
 import liquidjava.processor.RefinementProcessor;
 import liquidjava.processor.context.ContextHistory;
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 import spoon.Launcher;
 import spoon.compiler.Environment;
 import spoon.processing.ProcessingManager;
@@ -25,46 +20,29 @@ public class CommandLineLauncher {
 
     private static final Diagnostics diagnostics = Diagnostics.getInstance();
     private static final ContextHistory contextHistory = ContextHistory.getInstance();
+    public static final CommandLineArgs cmdArgs = new CommandLineArgs();
 
     public static void main(String[] args) {
-        CommandLine commandLine = new CommandLine(new CliArguments());
-        int exitCode = commandLine.execute(args);
-        if (exitCode != 0) {
-            System.exit(exitCode);
+        CommandLine cmd = new CommandLine(cmdArgs);
+        cmd.parseArgs(args);
+
+        if (cmd.isUsageHelpRequested()) {
+            cmd.usage(System.out);
+            return;
         }
-    }
 
-    @Command(name = "liquidjava", mixinStandardHelpOptions = true, customSynopsis = "./liquidjava <...paths> <options>")
-    private static class CliArguments implements Callable<Integer> {
+        launch(cmdArgs.paths.stream().toArray(String[]::new));
 
-        @Option(names = { "-d", "--debug" }, description = "Enable debug mode for more detailed output")
-        private boolean debugMode;
-
-        @Parameters(arity = "1..*", paramLabel = "<...paths>", description = "Paths to be verified by LiquidJava")
-        private List<String> paths;
-
-        @Override
-        public Integer call() {
-            if (debugMode) {
-                System.out.println("Debug mode enabled");
-                System.out.println("Input paths: " + paths);
-                diagnostics.setDebugMode();
-            }
-
-            launch(paths.stream().toArray(String[]::new));
-
-            // print diagnostics
-            if (diagnostics.foundWarning()) {
-                System.out.println(diagnostics.getWarningOutput());
-            }
-            if (diagnostics.foundError()) {
-                System.out.println(diagnostics.getErrorOutput());
-                return 1;
-            }
-
-            System.out.println("Correct! Passed Verification.");
-            return 0;
+        // print diagnostics
+        if (diagnostics.foundWarning()) {
+            System.out.println(diagnostics.getWarningOutput());
         }
+        if (diagnostics.foundError()) {
+            System.out.println(diagnostics.getErrorOutput());
+            return;
+        }
+
+        System.out.println("Correct! Passed Verification.");
     }
 
     public static void launch(String... paths) {
