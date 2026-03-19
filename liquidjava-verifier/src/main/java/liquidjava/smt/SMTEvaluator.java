@@ -27,7 +27,7 @@ public class SMTEvaluator {
     public SMTResult verifySubtype(Predicate subRef, Predicate supRef, Context context) throws Exception {
         Predicate toVerify = Predicate.createConjunction(subRef, supRef.negate());
         if (CommandLineLauncher.cmdArgs.debugMode) {
-            System.out.println("Verifying: " + subRef + " <: " + supRef);
+            System.out.println(String.format("%s <: %s", subRef, supRef));
         }
         try {
             Expression exp = toVerify.getExpression();
