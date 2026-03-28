@@ -20,6 +20,7 @@ import liquidjava.rj_language.ast.Var;
 import liquidjava.smt.Counterexample;
 import liquidjava.smt.SMTEvaluator;
 import liquidjava.smt.SMTResult;
+import liquidjava.utils.Utils;
 import liquidjava.utils.constants.Keys;
 import spoon.reflect.cu.SourcePosition;
 import spoon.reflect.declaration.CtElement;
@@ -58,10 +59,14 @@ public class VCChecker {
             expected = expectedType.changeStatesToRefinements(filtered, s).changeAliasToRefinement(context, f);
         } catch (LJError e) {
             // add location info to error
-            e.setPosition(element.getPosition());
+            if (e.getPosition() == null) {
+                SourcePosition pos = Utils.getFirstLJAnnotationValuePosition(element);
+                e.setPosition(pos);
+            }
             throw e;
         }
-        SMTResult result = verifySMTSubtype(expected, premises, element.getPosition());
+        SourcePosition annotationValuePos = Utils.getFirstLJAnnotationValuePosition(element);
+        SMTResult result = verifySMTSubtype(expected, premises, annotationValuePos);
         if (result.isError()) {
             throw new RefinementError(element.getPosition(), expectedType.simplify(context),
                     premisesBeforeChange.simplify(context), map, result.getCounterexample(), customMessage);
@@ -99,7 +104,9 @@ public class VCChecker {
         try {
             return new SMTEvaluator().verifySubtype(found, expected, context);
         } catch (LJError e) {
-            e.setPosition(position);
+            if (e.getPosition() == null) {
+                e.setPosition(position);
+            }
             throw e;
         } catch (Exception e) {
             throw new CustomError(e.getMessage(), position);
