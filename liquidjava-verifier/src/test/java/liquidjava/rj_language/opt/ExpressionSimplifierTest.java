@@ -1,6 +1,7 @@
 package liquidjava.rj_language.opt;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static liquidjava.utils.TestUtils.*;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,6 @@ import liquidjava.rj_language.ast.LiteralInt;
 import liquidjava.rj_language.ast.UnaryExpression;
 import liquidjava.rj_language.ast.Var;
 import liquidjava.rj_language.opt.derivation_node.BinaryDerivationNode;
-import liquidjava.rj_language.opt.derivation_node.DerivationNode;
 import liquidjava.rj_language.opt.derivation_node.IteDerivationNode;
 import liquidjava.rj_language.opt.derivation_node.UnaryDerivationNode;
 import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
@@ -1020,37 +1020,78 @@ class ExpressionSimplifierTest {
         assertNull(rightNode.getOrigin());
     }
 
-    /**
-     * Helper method to compare two derivation nodes recursively
-     */
-    private void assertDerivationEquals(DerivationNode expected, DerivationNode actual, String message) {
-        if (expected == null && actual == null)
-            return;
+    @Test
+    void testEntailedConjunctIsRemovedButOriginIsPreserved() {
+        // Given: b >= 100 && b > 0
+        // Expected: b >= 100 (b >= 100 implies b > 0)
 
-        assertNotNull(expected);
-        assertEquals(expected.getClass(), actual.getClass(), message + ": node types should match");
-        if (expected instanceof ValDerivationNode expectedVal) {
-            ValDerivationNode actualVal = (ValDerivationNode) actual;
-            assertEquals(expectedVal.getValue().toString(), actualVal.getValue().toString(),
-                    message + ": values should match");
-            assertDerivationEquals(expectedVal.getOrigin(), actualVal.getOrigin(), message + " > origin");
-        } else if (expected instanceof BinaryDerivationNode expectedBin) {
-            BinaryDerivationNode actualBin = (BinaryDerivationNode) actual;
-            assertEquals(expectedBin.getOp(), actualBin.getOp(), message + ": operators should match");
-            assertDerivationEquals(expectedBin.getLeft(), actualBin.getLeft(), message + " > left");
-            assertDerivationEquals(expectedBin.getRight(), actualBin.getRight(), message + " > right");
-        } else if (expected instanceof VarDerivationNode expectedVar) {
-            VarDerivationNode actualVar = (VarDerivationNode) actual;
-            assertEquals(expectedVar.getVar(), actualVar.getVar(), message + ": variables should match");
-        } else if (expected instanceof UnaryDerivationNode expectedUnary) {
-            UnaryDerivationNode actualUnary = (UnaryDerivationNode) actual;
-            assertEquals(expectedUnary.getOp(), actualUnary.getOp(), message + ": operators should match");
-            assertDerivationEquals(expectedUnary.getOperand(), actualUnary.getOperand(), message + " > operand");
-        } else if (expected instanceof IteDerivationNode expectedIte) {
-            IteDerivationNode actualIte = (IteDerivationNode) actual;
-            assertDerivationEquals(expectedIte.getCondition(), actualIte.getCondition(), message + " > condition");
-            assertDerivationEquals(expectedIte.getThenBranch(), actualIte.getThenBranch(), message + " > then");
-            assertDerivationEquals(expectedIte.getElseBranch(), actualIte.getElseBranch(), message + " > else");
-        }
+        addIntVariableToContext("b");
+        Expression b = new Var("b");
+        Expression bGe100 = new BinaryExpression(b, ">=", new LiteralInt(100));
+        Expression bGt0 = new BinaryExpression(b, ">", new LiteralInt(0));
+        Expression fullExpression = new BinaryExpression(bGe100, "&&", bGt0);
+
+        ValDerivationNode result = ExpressionSimplifier.simplify(fullExpression);
+
+        assertNotNull(result);
+        assertEquals("b >= 100", result.getValue().toString(),
+                "The weaker conjunct should be removed when implied by the stronger one");
+
+        ValDerivationNode expectedLeft = new ValDerivationNode(bGe100, null);
+        ValDerivationNode expectedRight = new ValDerivationNode(bGt0, null);
+        ValDerivationNode expected = new ValDerivationNode(bGe100,
+                new BinaryDerivationNode(expectedLeft, expectedRight, "&&"));
+
+        assertDerivationEquals(expected, result, "Entailment simplification should preserve conjunction origin");
+    }
+
+    @Test
+    void testStrictComparisonImpliesNonStrictComparison() {
+        // Given: x > y && x >= y
+        // Expected: x > y (x > y implies x >= y)
+
+        addIntVariableToContext("x");
+        addIntVariableToContext("y");
+        Expression x = new Var("x");
+        Expression y = new Var("y");
+        Expression xGtY = new BinaryExpression(x, ">", y);
+        Expression xGeY = new BinaryExpression(x, ">=", y);
+        Expression fullExpression = new BinaryExpression(xGtY, "&&", xGeY);
+
+        ValDerivationNode result = ExpressionSimplifier.simplify(fullExpression);
+
+        assertNotNull(result);
+        assertEquals("x > y", result.getValue().toString(),
+                "The stricter comparison should be kept when it implies the weaker one");
+
+        ValDerivationNode expectedLeft = new ValDerivationNode(xGtY, null);
+        ValDerivationNode expectedRight = new ValDerivationNode(xGeY, null);
+        ValDerivationNode expected = new ValDerivationNode(xGtY,
+                new BinaryDerivationNode(expectedLeft, expectedRight, "&&"));
+
+        assertDerivationEquals(expected, result, "Strict comparison simplification should preserve conjunction origin");
+    }
+
+    @Test
+    void testEquivalentBoundsKeepOneSide() {
+        // Given: i >= 0 && 0 <= i
+        // Expected: 0 <= i (both conjuncts express the same condition)
+        addIntVariableToContext("i");
+        Expression i = new Var("i");
+        Expression zeroLeI = new BinaryExpression(new LiteralInt(0), "<=", i);
+        Expression iGeZero = new BinaryExpression(i, ">=", new LiteralInt(0));
+        Expression fullExpression = new BinaryExpression(zeroLeI, "&&", iGeZero);
+
+        ValDerivationNode result = ExpressionSimplifier.simplify(fullExpression);
+
+        assertNotNull(result);
+        assertEquals("0 <= i", result.getValue().toString(), "Equivalent bounds should collapse to a single conjunct");
+
+        ValDerivationNode expectedLeft = new ValDerivationNode(zeroLeI, null);
+        ValDerivationNode expectedRight = new ValDerivationNode(iGeZero, null);
+        ValDerivationNode expected = new ValDerivationNode(zeroLeI,
+                new BinaryDerivationNode(expectedLeft, expectedRight, "&&"));
+
+        assertDerivationEquals(expected, result, "Equivalent bounds simplification should preserve conjunction origin");
     }
 }

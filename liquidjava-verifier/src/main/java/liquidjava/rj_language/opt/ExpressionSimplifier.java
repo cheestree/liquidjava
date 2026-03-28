@@ -1,5 +1,7 @@
 package liquidjava.rj_language.opt;
 
+import liquidjava.processor.context.Context;
+import liquidjava.rj_language.Predicate;
 import java.util.Map;
 
 import liquidjava.processor.facade.AliasDTO;
@@ -11,6 +13,8 @@ import liquidjava.rj_language.opt.derivation_node.BinaryDerivationNode;
 import liquidjava.rj_language.opt.derivation_node.DerivationNode;
 import liquidjava.rj_language.opt.derivation_node.UnaryDerivationNode;
 import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
+import liquidjava.smt.SMTEvaluator;
+import liquidjava.smt.SMTResult;
 
 public class ExpressionSimplifier {
 
@@ -88,6 +92,16 @@ public class ExpressionSimplifier {
             // collapse symmetric equalities (e.g. x == y && y == x => x == y)
             if (isSymmetricEquality(leftSimplified.getValue(), rightSimplified.getValue())) {
                 return leftSimplified;
+            }
+
+            // remove weaker conjuncts (e.g. x > 0 && x > -1 => x > 0)
+            if (implies(leftSimplified.getValue(), rightSimplified.getValue())) {
+                return new ValDerivationNode(leftSimplified.getValue(),
+                        new BinaryDerivationNode(leftSimplified, rightSimplified, "&&"));
+            }
+            if (implies(rightSimplified.getValue(), leftSimplified.getValue())) {
+                return new ValDerivationNode(rightSimplified.getValue(),
+                        new BinaryDerivationNode(leftSimplified, rightSimplified, "&&"));
             }
 
             // return the conjunction with simplified children
@@ -190,5 +204,18 @@ public class ExpressionSimplifier {
         }
 
         return node;
+    }
+
+    /**
+     * Checks whether one expression implies another by asking Z3, used to remove weaker conjuncts in the simplification
+     */
+    private static boolean implies(Expression stronger, Expression weaker) {
+        try {
+            SMTResult result = new SMTEvaluator().verifySubtype(new Predicate(stronger), new Predicate(weaker),
+                    Context.getInstance());
+            return result.isOk();
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
