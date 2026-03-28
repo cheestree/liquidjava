@@ -1,5 +1,8 @@
 package liquidjava.rj_language.opt;
 
+import java.util.Map;
+
+import liquidjava.processor.facade.AliasDTO;
 import liquidjava.rj_language.ast.BinaryExpression;
 import liquidjava.rj_language.ast.Expression;
 import liquidjava.rj_language.ast.LiteralBoolean;
@@ -12,13 +15,18 @@ import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
 public class ExpressionSimplifier {
 
     /**
-     * Simplifies an expression by applying constant propagation, constant folding and removing redundant conjuncts
-     * Returns a derivation node representing the tree of simplifications applied
+     * Simplifies an expression by applying constant propagation, constant folding, removing redundant conjuncts and
+     * expanding aliases Returns a derivation node representing the tree of simplifications applied
      */
-    public static ValDerivationNode simplify(Expression exp) {
+    public static ValDerivationNode simplify(Expression exp, Map<String, AliasDTO> aliases) {
         ValDerivationNode fixedPoint = simplifyToFixedPoint(null, exp);
         ValDerivationNode simplified = simplifyValDerivationNode(fixedPoint);
-        return unwrapBooleanLiterals(simplified);
+        ValDerivationNode unwrapped = unwrapBooleanLiterals(simplified);
+        return AliasExpansion.expand(unwrapped, aliases);
+    }
+
+    public static ValDerivationNode simplify(Expression exp) {
+        return simplify(exp, Map.of());
     }
 
     /**
