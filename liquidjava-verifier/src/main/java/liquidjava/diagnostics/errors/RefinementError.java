@@ -54,7 +54,8 @@ public class RefinementError extends LJError {
                 // join with "&&"
                 .collect(Collectors.joining(" && "));
 
-        if (counterexampleString.isEmpty() || counterexampleString.equals(found.getValue().toString()))
+        String foundString = VariableFormatter.formatText(found.getValue().toString());
+        if (counterexampleString.isEmpty() || counterexampleString.equals(foundString))
             return null;
 
         return counterexampleString;
