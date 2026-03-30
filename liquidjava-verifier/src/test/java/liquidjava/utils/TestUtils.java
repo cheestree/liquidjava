@@ -1,13 +1,16 @@
 package liquidjava.utils;
 
+import java.io.BufferedReader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import liquidjava.processor.context.Context;
 import liquidjava.rj_language.Predicate;
@@ -44,42 +47,52 @@ public class TestUtils {
     }
 
     /**
-     * Reads the expected error message from the first line of the given test file
+     * Reads the expected error messages from the given file by looking for a comment containing the expected error
+     * message.
      * 
      * @param filePath
      * 
-     * @return optional containing the expected error message if present, otherwise empty
+     * @return list of expected error messages found in the file, or empty list if there was an error reading the file
+     *         or if there are no expected error messages in the file
      */
-    public static Optional<String> getExpectedErrorFromFile(Path filePath) {
-        try (Stream<String> lines = Files.lines(filePath)) {
-            Optional<String> first = lines.findFirst();
-            if (first.isPresent() && first.get().startsWith("//")) {
-                return Optional.of(first.get().substring(2).trim());
-            } else {
-                return Optional.empty();
+    public static List<Pair<String, Integer>> getExpectedErrorsFromFile(Path filePath) {
+        List<Pair<String, Integer>> expectedErrors = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+            String line;
+            int lineNumber = 0;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                Pattern p = Pattern.compile("//\\s*(.*?\\bError\\b)", Pattern.CASE_INSENSITIVE);
+                Matcher m = p.matcher(line);
+                if (m.find()) {
+                    expectedErrors.add(new Pair<>(m.group(1).trim(), lineNumber));
+                }
             }
-        } catch (Exception e) {
-            return Optional.empty();
+        } catch (IOException e) {
+            return List.of();
         }
+        return expectedErrors;
     }
 
     /**
-     * Reads the expected error message from a .expected file in the given directory
+     * Reads the expected error messages from all files in the given directory and combines them into a single list
      * 
      * @param dirPath
      * 
-     * @return optional containing the expected error message if present, otherwise empty
+     * @return list of expected error messages from all files in the directory, or empty list if there was an error
+     *         reading the directory or if there are no files in the directory
      */
-    public static Optional<String> getExpectedErrorFromDirectory(Path dirPath) {
-        Path expectedFilePath = dirPath.resolve(".expected");
-        if (Files.exists(expectedFilePath)) {
-            try (Stream<String> lines = Files.lines(expectedFilePath)) {
-                return lines.findFirst().map(String::trim);
-            } catch (IOException e) {
-                return Optional.empty();
+    public static List<Pair<String, Integer>> getExpectedErrorsFromDirectory(Path dirPath) {
+        List<Pair<String, Integer>> expectedErrors = new ArrayList<>();
+        try {
+            List<Path> files = Files.list(dirPath).filter(Files::isRegularFile).toList();
+            for (Path file : files) {
+                getExpectedErrorsFromFile(file).forEach(expectedErrors::add);
             }
+        } catch (IOException e) {
+            return List.of();
         }
-        return Optional.empty();
+        return expectedErrors;
     }
 
     /**
