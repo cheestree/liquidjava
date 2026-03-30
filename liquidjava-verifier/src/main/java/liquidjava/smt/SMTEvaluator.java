@@ -7,7 +7,6 @@ import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
 import com.microsoft.z3.Z3Exception;
 
-import liquidjava.api.CommandLineLauncher;
 import liquidjava.processor.context.Context;
 import liquidjava.rj_language.Predicate;
 import liquidjava.rj_language.ast.Expression;
@@ -26,9 +25,6 @@ public class SMTEvaluator {
      */
     public SMTResult verifySubtype(Predicate subRef, Predicate supRef, Context context) throws Exception {
         Predicate toVerify = Predicate.createConjunction(subRef, supRef.negate());
-        if (CommandLineLauncher.cmdArgs.debugMode) {
-            System.out.println(String.format("%s <: %s", subRef, supRef));
-        }
         try {
             Expression exp = toVerify.getExpression();
             try (TranslatorToZ3 tz3 = new TranslatorToZ3(context)) {

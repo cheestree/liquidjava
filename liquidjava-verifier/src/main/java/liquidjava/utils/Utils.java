@@ -1,6 +1,7 @@
 package liquidjava.utils;
 
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -91,5 +92,23 @@ public class Utils {
             }
         }
         return element.getPosition();
+    }
+
+    public static String getExpressionFromPosition(SourcePosition position) {
+        if (position == null || position.getFile() == null)
+            return null;
+        try (Scanner scanner = new Scanner(position.getFile())) {
+            int currentLine = 1;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (currentLine == position.getLine()) {
+                    return line.substring(position.getColumn() - 1).trim();
+                }
+                currentLine++;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
 }
