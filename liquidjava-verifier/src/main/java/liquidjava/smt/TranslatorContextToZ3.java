@@ -23,7 +23,7 @@ public class TranslatorContextToZ3 {
     static void translateVariables(Context z3, Map<String, CtTypeReference<?>> ctx,
             Map<String, Expr<?>> varTranslation) {
 
-        createEnumVariables(z3, ctx, varTranslation);
+        translateEnumVariables(z3, ctx, varTranslation);
 
         for (Map.Entry<String, CtTypeReference<?>> entry : ctx.entrySet()) {
             String name = entry.getKey();
