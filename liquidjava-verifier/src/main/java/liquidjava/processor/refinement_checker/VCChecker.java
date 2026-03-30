@@ -105,8 +105,8 @@ public class VCChecker {
     public SMTResult verifySMTSubtype(Predicate expected, Predicate found, SourcePosition position) throws LJError {
         try {
             if (CommandLineLauncher.cmdArgs.debugMode) {
-                System.out.println(String.format("%s <: %s on expression '%s' at %s", expected, found,
-                        Utils.getExpressionFromPosition(position),
+                String exp = Utils.getExpressionFromPosition(position);
+                System.out.println(String.format("%s <: %s %s at %s", expected, found, exp ? String.format("on expression '%s'", exp) : "" ,
                         position.getFile().getName() + ":" + position.getLine()));
             }
             return new SMTEvaluator().verifySubtype(found, expected, context);
