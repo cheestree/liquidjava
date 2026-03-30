@@ -67,9 +67,9 @@ public class TranslatorContextToZ3 {
     }
 
     /**
-     * Create EnumSorts and register enum literal constants, and create variable for enum if not present
+     * Creates constants for enum variables in the context and adds them to the translation map if not already present
      */
-    public static void createEnumVariables(Context z3, Map<String, CtTypeReference<?>> ctx,
+    public static void translateEnumVariables(Context z3, Map<String, CtTypeReference<?>> ctx,
             Map<String, Expr<?>> varTranslation) {
         Map<String, EnumSort<?>> enumSorts = new HashMap<>();
 
@@ -78,8 +78,7 @@ public class TranslatorContextToZ3 {
             CtTypeReference<?> type = entry.getValue();
             if (type.isEnum() && type.getDeclaration()instanceof CtEnum<?> enumDecl) {
                 EnumSort<?> enumSort = translateEnum(z3, varTranslation, enumSorts, type, enumDecl);
-                // translateEnum may have already registered name as a literal constant
-                // (e.g. Mode.Photo), no need to overwrite
+                // may already be registered as enum literal
                 if (!varTranslation.containsKey(name)) {
                     varTranslation.put(name, z3.mkConst(name, enumSort));
                 }
