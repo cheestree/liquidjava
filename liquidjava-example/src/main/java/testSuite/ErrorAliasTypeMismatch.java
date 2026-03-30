@@ -12,7 +12,7 @@ public class ErrorAliasTypeMismatch {
         @Refinement("PtGrade(_)")
         double positiveGrade2 = 20 * 0.5 + 20 * 0.5;
 
-        @Refinement("Positive(_)")
-        double positive = positiveGrade2; // Argument Mismatch Error
+        @Refinement("Positive(_)") // Argument Mismatch Error
+        double positive = positiveGrade2;
     }
 }

@@ -12,8 +12,8 @@ import liquidjava.specification.StateSet;
 @StateSet({"alreadyRead", "nothingRead"})
 public interface InputStreamReaderRefinements {
 
-    @StateRefinement(to = "open(this) && close(this)")
-    public void InputStreamReader(InputStream in); // State Conflict Error
+    @StateRefinement(to = "open(this) && close(this)") // State Conflict Error
+    public void InputStreamReader(InputStream in);
 
     @StateRefinement(from = "open(this)", to = "open(this) && alreadyRead(this)")
     @Refinement("(_ >= -1) && (_ <= 127)")
