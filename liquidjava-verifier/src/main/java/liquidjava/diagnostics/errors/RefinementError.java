@@ -8,6 +8,7 @@ import liquidjava.api.CommandLineLauncher;
 import liquidjava.diagnostics.TranslationTable;
 import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
 import liquidjava.smt.Counterexample;
+import liquidjava.utils.VariableFormatter;
 import spoon.reflect.cu.SourcePosition;
 
 /**
@@ -23,7 +24,9 @@ public class RefinementError extends LJError {
 
     public RefinementError(SourcePosition position, ValDerivationNode expected, ValDerivationNode found,
             TranslationTable translationTable, Counterexample counterexample, String customMessage) {
-        super("Refinement Error", String.format("%s is not a subtype of %s", found.getValue(), expected.getValue()),
+        super("Refinement Error",
+                String.format("%s is not a subtype of %s", VariableFormatter.formatText(found.getValue().toString()),
+                        VariableFormatter.formatText(expected.getValue().toString())),
                 position, translationTable, customMessage);
         this.expected = expected;
         this.found = found;
@@ -48,11 +51,12 @@ public class RefinementError extends LJError {
                 // only include variables that appear in the found value
                 .filter(a -> CommandLineLauncher.cmdArgs.debugMode || foundVarNames.contains(a.first()))
                 // format as "var == value"
-                .map(a -> a.first() + " == " + a.second())
+                .map(a -> VariableFormatter.formatVariable(a.first()) + " == " + a.second())
                 // join with "&&"
                 .collect(Collectors.joining(" && "));
 
-        if (counterexampleString.isEmpty() || counterexampleString.equals(found.getValue().toString()))
+        String foundString = VariableFormatter.formatText(found.getValue().toString());
+        if (counterexampleString.isEmpty() || counterexampleString.equals(foundString))
             return null;
 
         return counterexampleString;
