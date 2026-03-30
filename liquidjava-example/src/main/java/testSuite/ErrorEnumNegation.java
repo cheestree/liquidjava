@@ -1,4 +1,3 @@
-// Refinement Error
 package testSuite;
 
 import liquidjava.specification.Refinement;
@@ -13,7 +12,7 @@ class ErrorEnumNegation {
 
     public static void main(String[] args) {
         ErrorEnumNegation e = new ErrorEnumNegation();
-        e.process(Status.Active);   // correct
-        e.process(Status.Inactive); // error
+        e.process(Status.Active);
+        e.process(Status.Inactive); // Refinement Error
     }
 }

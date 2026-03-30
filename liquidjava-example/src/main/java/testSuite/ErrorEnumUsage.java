@@ -1,9 +1,7 @@
-// State Refinement Error
 package testSuite;
 
 import liquidjava.specification.StateRefinement;
 import liquidjava.specification.StateSet;
-
 
 @SuppressWarnings("unused")
 @StateSet({"photoMode", "videoMode", "noMode"})
@@ -21,7 +19,7 @@ class ErrorEnumUsage {
 	public void setMode(Mode mode) {
 		this.mode = mode;
 	}
-	
+
 	@StateRefinement(from="photoMode(this)")
 	public void takePhoto() {}
 	
@@ -30,6 +28,6 @@ class ErrorEnumUsage {
 		// Correct
 		ErrorEnumUsage st = new ErrorEnumUsage();
 		st.setMode(Mode.Video);
-		st.takePhoto(); //error
+		st.takePhoto(); // State Refinement Error
 	}
 }
