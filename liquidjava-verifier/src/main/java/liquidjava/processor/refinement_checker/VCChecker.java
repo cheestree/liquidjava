@@ -107,7 +107,7 @@ public class VCChecker {
             if (CommandLineLauncher.cmdArgs.debugMode) {
                 String exp = Utils.getExpressionFromPosition(position);
                 System.out.println(String.format("%s <: %s %s at %s", expected, found,
-                        exp == null ? String.format("on expression '%s'", exp) : "",
+                        exp != null ? String.format("on expression '%s'", exp) : "",
                         position.getFile().getName() + ":" + position.getLine()));
             }
             return new SMTEvaluator().verifySubtype(found, expected, context);

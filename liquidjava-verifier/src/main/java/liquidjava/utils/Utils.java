@@ -118,7 +118,7 @@ public class Utils {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 if (currentLine == position.getLine()) {
-                    return line.substring(position.getColumn() - 1).trim();
+                    return line.substring(position.getColumn() - 2).trim();
                 }
                 currentLine++;
             }
