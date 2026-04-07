@@ -32,7 +32,7 @@ public class CommandLineLauncher {
         }
 
         if (cmd.isVersionHelpRequested()) {
-            System.out.println("LiquidJava verifier Version: " + cmdArgs.getVersionString());
+            System.out.println("liquidjava " + cmdArgs.getVersionString());
             return;
         }
 
