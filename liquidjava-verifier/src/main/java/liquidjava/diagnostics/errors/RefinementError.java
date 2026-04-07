@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import liquidjava.api.CommandLineLauncher;
 import liquidjava.diagnostics.TranslationTable;
 import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
 import liquidjava.smt.Counterexample;
@@ -48,7 +49,7 @@ public class RefinementError extends LJError {
         found.getValue().getVariableNames(foundVarNames);
         String counterexampleString = counterexample.assignments().stream()
                 // only include variables that appear in the found value
-                .filter(a -> foundVarNames.contains(a.first()))
+                .filter(a -> CommandLineLauncher.cmdArgs.debugMode || foundVarNames.contains(a.first()))
                 // format as "var == value"
                 .map(a -> VariableFormatter.formatVariable(a.first()) + " == " + a.second())
                 // join with "&&"
