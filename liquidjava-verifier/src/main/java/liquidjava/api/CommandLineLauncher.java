@@ -8,6 +8,7 @@ import liquidjava.diagnostics.errors.CustomError;
 import liquidjava.diagnostics.warnings.CustomWarning;
 import liquidjava.processor.RefinementProcessor;
 import liquidjava.processor.context.ContextHistory;
+import liquidjava.specification.Refinement;
 import picocli.CommandLine;
 import spoon.Launcher;
 import spoon.compiler.Environment;
@@ -66,6 +67,9 @@ public class CommandLineLauncher {
 
         Environment env = launcher.getEnvironment();
         env.setNoClasspath(true);
+        env.setSourceClasspath(
+                new String[] { new File(Refinement.class.getProtectionDomain().getCodeSource().getLocation().getFile())
+                        .getAbsolutePath() });
         env.setComplianceLevel(8);
 
         boolean buildSuccess = launcher.getModelBuilder().build();
