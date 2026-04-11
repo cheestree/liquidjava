@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.fail;
@@ -18,8 +20,6 @@ import liquidjava.diagnostics.LJDiagnostic;
 import liquidjava.utils.TestUtils.ExpectedDiagnostic;
 import static liquidjava.utils.TestUtils.getExpectedDiagnosticsFromDirectory;
 import static liquidjava.utils.TestUtils.getExpectedDiagnosticsFromFile;
-import static liquidjava.utils.TestUtils.shouldFail;
-import static liquidjava.utils.TestUtils.shouldPass;
 
 public class TestExamples {
 
@@ -46,19 +46,16 @@ public class TestExamples {
         List<ExpectedDiagnostic> expectedWarnings = isDirectory ? getExpectedDiagnosticsFromDirectory(path, "warning")
                 : getExpectedDiagnosticsFromFile(path, "warning");
 
-        // verification should pass, check if any errors were found
-        if (shouldPass(pathName) && diagnostics.foundError()) {
+        boolean expectsFailure = !expectedErrors.isEmpty();
+
+        if (!expectsFailure && diagnostics.foundError()) {
             System.out.println("Error in: " + pathName + " --- should pass but an error was found. \n"
                     + diagnostics.getErrorOutput());
             fail();
-        }
-        // verification should fail, check if it failed as expected (multiple errors can be found)
-        else if (shouldFail(pathName)) {
-            if (!diagnostics.foundError()) {
-                System.out.println("Error in: " + pathName + " --- should fail but no errors were found. \n"
-                        + diagnostics.getErrorOutput());
-                fail();
-            }
+        } else if (expectsFailure && !diagnostics.foundError()) {
+            System.out.println("Error in: " + pathName + " --- should fail but no errors were found. \n"
+                    + diagnostics.getErrorOutput());
+            fail();
         }
 
         if (expectedErrors.isEmpty() && expectedWarnings.isEmpty()
@@ -123,29 +120,31 @@ public class TestExamples {
     }
 
     /**
-     * Returns a Stream of paths to test files in the testSuite directory. These include files with names starting with
-     * "Correct" or "Error", and directories containing "correct" or "error".
+     * Provides the paths to test. This includes both individual files and directories. Directories
+     * contain either .java files or subdirectories with .java files, but not both.
      * 
-     * @return Stream of paths to test files
-     *
-     * @throws IOException
-     *             if an I/O error occurs or the path does not exist
-     */
+     * @return stream of paths to test
+     * 
+     **/
     private static Stream<Path> sourcePaths() throws IOException {
-        return Files.find(Paths.get("../liquidjava-example/src/main/java/testSuite/"), Integer.MAX_VALUE,
-                (filePath, fileAttr) -> {
-                    String name = filePath.getFileName().toString();
-                    // Files that start with "Correct" or "Error"
-                    boolean isFileStartingWithCorrectOrError = fileAttr.isRegularFile()
-                            && (shouldPass(name) || shouldFail(name));
+        Path root = Paths.get("../liquidjava-example/src/main/java/testSuite/");
 
-                    // Directories that contain "correct" or "error"
-                    boolean isDirectoryWithCorrectOrError = fileAttr.isDirectory()
-                            && (shouldPass(name) || shouldFail(name));
+        List<Path> suiteDirs = Files.walk(root, Integer.MAX_VALUE).filter(Files::isDirectory)
+                .filter(p -> !p.equals(root)).filter(p -> directlyContainsJava(p)).toList();
+        Set<Path> suiteParents = new HashSet<>(suiteDirs);
+        List<Path> standaloneFiles = Files.walk(root, Integer.MAX_VALUE).filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java")).filter(p -> !suiteParents.contains(p.getParent()))
+                .toList();
 
-                    // Return true if either condition matches
-                    return isFileStartingWithCorrectOrError || isDirectoryWithCorrectOrError;
-                });
+        return Stream.concat(standaloneFiles.stream(), suiteDirs.stream());
+    }
+
+    private static boolean directlyContainsJava(Path dir) {
+        try (Stream<Path> children = Files.list(dir)) {
+            return children.anyMatch(p -> Files.isRegularFile(p) && p.toString().endsWith(".java"));
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     /**
