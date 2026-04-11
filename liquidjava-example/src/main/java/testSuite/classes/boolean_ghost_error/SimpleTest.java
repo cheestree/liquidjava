@@ -5,6 +5,6 @@ public class SimpleTest {
 		SimpleStateMachine ssm = new SimpleStateMachine();
 		ssm.open();
 		ssm.close();
-		ssm.execute(); // State Refinement Error
+		ssm.execute(); // Expected: State Refinement Error
 	}
 }

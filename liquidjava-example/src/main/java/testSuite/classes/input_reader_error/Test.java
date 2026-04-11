@@ -11,6 +11,6 @@ public class Test {
         is.read();
         is.read();
         is.close();
-        is.read(); // State Refinement Error
+        is.read(); // Expected: State Refinement Error
     }
 }

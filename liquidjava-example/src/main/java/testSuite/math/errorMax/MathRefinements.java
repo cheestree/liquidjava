@@ -16,13 +16,13 @@ public interface MathRefinements {
     public int abs(int arg0);
 
     @Refinement("(arg0 > 0)?( _ == arg0):(_ == -arg0)")
-    public int abs(long arg0);
+    public long abs(long arg0);
 
     @Refinement("(arg0 > 0)?( _ == arg0):(_ == -arg0)")
-    public int abs(float arg0);
+    public float abs(float arg0);
 
     @Refinement("(arg0 > 0)?( _ == arg0):(_ == -arg0)")
-    public int abs(double arg0);
+    public double abs(double arg0);
 
     @Refinement(" _ == a+b")
     public int addExact(int a, int b);
@@ -43,13 +43,13 @@ public interface MathRefinements {
     public int decrementExact(int a);
 
     @Refinement("_ == (a-1)")
-    public int decrementExact(long a);
+    public long decrementExact(long a);
 
     @Refinement("_ == (a+1)")
     public int incrementExact(int a);
 
     @Refinement("_ == (a+1)")
-    public int incrementExact(long a);
+    public long incrementExact(long a);
 
     @Refinement("(a > b)? (_ == a):(_ == b)")
     public int max(int a, int b);
@@ -58,7 +58,7 @@ public interface MathRefinements {
     public int min(int a, int b);
 
     @Refinement(" _ > 0.0 && _ < 1.0")
-    public long random(long a, long b);
+    public double random();
 
     @Refinement("((sig > 0)?(_ > 0):(_ < 0)) && (( _ == arg)||(_ == -arg))")
     public float copySign(float arg, float sig);

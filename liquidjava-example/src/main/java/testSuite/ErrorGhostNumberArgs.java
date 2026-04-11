@@ -8,6 +8,6 @@ public class ErrorGhostNumberArgs {
     @RefinementPredicate("ghost boolean open(int)")
     @Refinement("open(1,2) == true")
     public int one() {
-        return 1; // Argument Mismatch Error
+        return 1; // Expected: Argument Mismatch Error
     }
 }

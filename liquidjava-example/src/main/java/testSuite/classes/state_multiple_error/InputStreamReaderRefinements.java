@@ -1,6 +1,7 @@
 package testSuite.classes.state_multiple_error;
 
 import java.io.InputStream;
+
 import liquidjava.specification.ExternalRefinementsFor;
 import liquidjava.specification.Refinement;
 import liquidjava.specification.StateRefinement;
@@ -12,7 +13,7 @@ import liquidjava.specification.StateSet;
 @StateSet({"alreadyRead", "nothingRead"})
 public interface InputStreamReaderRefinements {
 
-    @StateRefinement(to = "open(this) && close(this)") // State Conflict Error
+    @StateRefinement(to = "open(this) && close(this)") // Expected: State Conflict Error
     public void InputStreamReader(InputStream in);
 
     @StateRefinement(from = "open(this)", to = "open(this) && alreadyRead(this)")
