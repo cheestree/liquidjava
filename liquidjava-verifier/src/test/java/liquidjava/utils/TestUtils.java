@@ -1,9 +1,6 @@
 package liquidjava.utils;
 
 import java.io.BufferedReader;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import liquidjava.processor.context.Context;
 import liquidjava.rj_language.Predicate;
@@ -47,52 +47,65 @@ public class TestUtils {
     }
 
     /**
-     * Reads the expected error messages from the given file by looking for a comment containing the expected error
-     * message.
-     * 
+     * Reads the expected diagnostics from the given file by looking for comments in the form: "// Expected: Error" or
+     * "// Expected: Warning".
+     *
      * @param filePath
-     * 
-     * @return list of expected error messages found in the file, or empty list if there was an error reading the file
-     *         or if there are no expected error messages in the file
+     *
+     * @return list of expected diagnostics of the given kind found in the file, or empty list if there was an error
+     *         reading the file or if there are no expected diagnostics in the file
      */
-    public static List<Pair<String, Integer>> getExpectedErrorsFromFile(Path filePath) {
-        List<Pair<String, Integer>> expectedErrors = new ArrayList<>();
+    public static List<Pair<String, Integer>> getExpectedDiagnosticsFromFile(Path filePath, String kind) {
+        List<Pair<String, Integer>> expectedDiagnostics = new ArrayList<>();
+        String kindLower = kind == null ? "" : kind.toLowerCase();
+        Pattern expectedPattern = Pattern.compile("//\\s*Expected\\s*:\\s*(.*?)\\s*(Error|Warning)\\b.*",
+                Pattern.CASE_INSENSITIVE);
+
         try (BufferedReader reader = Files.newBufferedReader(filePath)) {
             String line;
             int lineNumber = 0;
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
-                Pattern p = Pattern.compile("//\\s*(.*?\\bError\\b)", Pattern.CASE_INSENSITIVE);
-                Matcher m = p.matcher(line);
-                if (m.find()) {
-                    expectedErrors.add(new Pair<>(m.group(1).trim(), lineNumber));
+                Matcher expectedMatcher = expectedPattern.matcher(line);
+                if (!expectedMatcher.find())
+                    continue;
+                String kindText = expectedMatcher.group(2);
+                String expectedKind = kindText.toLowerCase();
+                if (!expectedKind.equals(kindLower))
+                    continue;
+                String title = expectedMatcher.group(1);
+                String titleValue = null;
+                if (title != null) {
+                    String titleTrimmed = title.trim();
+                    titleValue = titleTrimmed.isEmpty() ? null : (titleTrimmed + " " + kindText);
                 }
+                expectedDiagnostics.add(new Pair<>(titleValue, lineNumber));
             }
         } catch (IOException e) {
             return List.of();
         }
-        return expectedErrors;
+        return expectedDiagnostics;
     }
 
     /**
-     * Reads the expected error messages from all files in the given directory and combines them into a single list
+     * Reads the expected diagnostics from all files in the given directory and combines them into a single list
      * 
      * @param dirPath
      * 
-     * @return list of expected error messages from all files in the directory, or empty list if there was an error
-     *         reading the directory or if there are no files in the directory
+     * @return list of expected diagnostics from all files in the directory, or empty list if there was an error reading
+     *         the directory or if there are no files in the directory
      */
-    public static List<Pair<String, Integer>> getExpectedErrorsFromDirectory(Path dirPath) {
-        List<Pair<String, Integer>> expectedErrors = new ArrayList<>();
+    public static List<Pair<String, Integer>> getExpectedDiagnosticsFromDirectory(Path dirPath, String kind) {
+        List<Pair<String, Integer>> expectedDiagnostics = new ArrayList<>();
         try {
             List<Path> files = Files.list(dirPath).filter(Files::isRegularFile).toList();
             for (Path file : files) {
-                getExpectedErrorsFromFile(file).forEach(expectedErrors::add);
+                getExpectedDiagnosticsFromFile(file, kind).forEach(expectedDiagnostics::add);
             }
         } catch (IOException e) {
             return List.of();
         }
-        return expectedErrors;
+        return expectedDiagnostics;
     }
 
     /**
