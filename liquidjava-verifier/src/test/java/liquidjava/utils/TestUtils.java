@@ -25,6 +25,13 @@ import spoon.reflect.factory.Factory;
 
 public class TestUtils {
 
+    public record ExpectedDiagnostic(String filePath, String title, int line) {
+        @Override
+        public String toString() {
+            return title + " on line " + line;
+        }
+    }
+
     private final static Factory factory = new Launcher().getFactory();
     private final static Context context = Context.getInstance();
 
@@ -55,9 +62,10 @@ public class TestUtils {
      * @return list of expected diagnostics of the given kind found in the file, or empty list if there was an error
      *         reading the file or if there are no expected diagnostics in the file
      */
-    public static List<Pair<String, Integer>> getExpectedDiagnosticsFromFile(Path filePath, String kind) {
-        List<Pair<String, Integer>> expectedDiagnostics = new ArrayList<>();
+    public static List<ExpectedDiagnostic> getExpectedDiagnosticsFromFile(Path filePath, String kind) {
+        List<ExpectedDiagnostic> expectedDiagnostics = new ArrayList<>();
         String kindLower = kind == null ? "" : kind.toLowerCase();
+        String normalizedFilePath = filePath.toAbsolutePath().normalize().toString();
         Pattern expectedPattern = Pattern.compile("//\\s*Expected\\s*:\\s*(.*?)\\s*(Error|Warning)\\b.*",
                 Pattern.CASE_INSENSITIVE);
 
@@ -79,7 +87,7 @@ public class TestUtils {
                     String titleTrimmed = title.trim();
                     titleValue = titleTrimmed.isEmpty() ? null : (titleTrimmed + " " + kindText);
                 }
-                expectedDiagnostics.add(new Pair<>(titleValue, lineNumber));
+                expectedDiagnostics.add(new ExpectedDiagnostic(normalizedFilePath, titleValue, lineNumber));
             }
         } catch (IOException e) {
             return List.of();
@@ -95,8 +103,8 @@ public class TestUtils {
      * @return list of expected diagnostics from all files in the directory, or empty list if there was an error reading
      *         the directory or if there are no files in the directory
      */
-    public static List<Pair<String, Integer>> getExpectedDiagnosticsFromDirectory(Path dirPath, String kind) {
-        List<Pair<String, Integer>> expectedDiagnostics = new ArrayList<>();
+    public static List<ExpectedDiagnostic> getExpectedDiagnosticsFromDirectory(Path dirPath, String kind) {
+        List<ExpectedDiagnostic> expectedDiagnostics = new ArrayList<>();
         try {
             List<Path> files = Files.list(dirPath).filter(Files::isRegularFile).toList();
             for (Path file : files) {

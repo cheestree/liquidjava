@@ -14,7 +14,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import liquidjava.api.CommandLineLauncher;
 import liquidjava.diagnostics.Diagnostics;
-import liquidjava.utils.Pair;
+import liquidjava.diagnostics.LJDiagnostic;
+import liquidjava.utils.TestUtils.ExpectedDiagnostic;
 import static liquidjava.utils.TestUtils.getExpectedDiagnosticsFromDirectory;
 import static liquidjava.utils.TestUtils.getExpectedDiagnosticsFromFile;
 import static liquidjava.utils.TestUtils.shouldFail;
@@ -40,10 +41,9 @@ public class TestExamples {
         // run verification
         CommandLineLauncher.launch(path.toFile().toString());
 
-        List<Pair<String, Integer>> expectedErrors = isDirectory ? getExpectedDiagnosticsFromDirectory(path, "error")
+        List<ExpectedDiagnostic> expectedErrors = isDirectory ? getExpectedDiagnosticsFromDirectory(path, "error")
                 : getExpectedDiagnosticsFromFile(path, "error");
-        List<Pair<String, Integer>> expectedWarnings = isDirectory
-                ? getExpectedDiagnosticsFromDirectory(path, "warning")
+        List<ExpectedDiagnostic> expectedWarnings = isDirectory ? getExpectedDiagnosticsFromDirectory(path, "warning")
                 : getExpectedDiagnosticsFromFile(path, "warning");
 
         // verification should pass, check if any errors were found
@@ -72,8 +72,8 @@ public class TestExamples {
         assertExpectedDiagnostics(pathName, expectedErrors, expectedWarnings);
     }
 
-    private void assertExpectedDiagnostics(String pathName, List<Pair<String, Integer>> expectedErrors,
-            List<Pair<String, Integer>> expectedWarnings) {
+    private void assertExpectedDiagnostics(String pathName, List<ExpectedDiagnostic> expectedErrors,
+            List<ExpectedDiagnostic> expectedWarnings) {
         int actualErrorCount = diagnostics.getErrors().size();
         if (actualErrorCount != expectedErrors.size()) {
             System.out.println("Error count mismatch in: " + pathName + " --- expected " + expectedErrors.size()
@@ -94,12 +94,13 @@ public class TestExamples {
                 diagnostics.getWarningOutput());
     }
 
-    private <T extends liquidjava.diagnostics.LJDiagnostic> void assertDiagnosticsMatch(String pathName, String label,
-            List<Pair<String, Integer>> expected, Iterable<T> actual, String output) {
+    private <T extends LJDiagnostic> void assertDiagnosticsMatch(String pathName, String label,
+            List<ExpectedDiagnostic> expected, Iterable<T> actual, String output) {
         for (T diagnostic : actual) {
             String foundTitle = diagnostic.getTitle();
             int foundLine = diagnostic.getPosition() != null ? diagnostic.getPosition().getLine() : -1;
-            boolean match = matchesExpected(expected, foundTitle, foundLine);
+            String foundFile = diagnostic.getFile();
+            boolean match = matchesExpected(expected, foundFile, foundTitle, foundLine);
 
             if (!match) {
                 System.out.println(label + " in: " + pathName + " --- expected " + label.toLowerCase() + "s: "
@@ -109,11 +110,14 @@ public class TestExamples {
         }
     }
 
-    private boolean matchesExpected(List<Pair<String, Integer>> expected, String actualTitle, int actualLine) {
+    private boolean matchesExpected(List<ExpectedDiagnostic> expected, String actualFile, String actualTitle,
+            int actualLine) {
         return expected.stream().anyMatch(item -> {
-            if (item.second() != actualLine)
+            if (item.line() != actualLine)
                 return false;
-            String expectedTitle = item.first();
+            if (!item.filePath().equals(actualFile))
+                return false;
+            String expectedTitle = item.title();
             return expectedTitle == null || expectedTitle.isBlank() || expectedTitle.equals(actualTitle);
         });
     }
