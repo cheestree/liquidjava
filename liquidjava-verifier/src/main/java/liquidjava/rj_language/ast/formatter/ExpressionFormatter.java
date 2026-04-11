@@ -16,6 +16,7 @@ import liquidjava.rj_language.ast.LiteralInt;
 import liquidjava.rj_language.ast.LiteralLong;
 import liquidjava.rj_language.ast.LiteralReal;
 import liquidjava.rj_language.ast.LiteralString;
+import liquidjava.rj_language.ast.Enum;
 import liquidjava.rj_language.ast.UnaryExpression;
 import liquidjava.rj_language.ast.Var;
 import liquidjava.rj_language.visitors.ExpressionVisitor;
@@ -144,6 +145,11 @@ public class ExpressionFormatter implements ExpressionVisitor<String> {
     @Override
     public String visitUnaryExpression(UnaryExpression exp) {
         return exp.getOp() + formatOperand(exp, exp.getExpression());
+    }
+
+    @Override
+    public String visitEnum(Enum en) {
+        return en.toString();
     }
 
     @Override

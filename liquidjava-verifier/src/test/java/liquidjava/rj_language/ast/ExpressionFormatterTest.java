@@ -21,6 +21,11 @@ class ExpressionFormatterTest {
     }
 
     @Test
+    void formatsEnums() {
+        assertEquals("Color.RED", new Enum("Color", "RED").toDisplayString());
+    }
+
+    @Test
     void formatsUnaryCompounds() {
         Expression comparison = new BinaryExpression(new Var("x"), ">", new LiteralInt(0));
 

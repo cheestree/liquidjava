@@ -13,7 +13,7 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "liquidjava", mixinStandardHelpOptions = false, customSynopsis = "./liquidjava <...paths> <options>")
 public class CommandLineArgs {
-    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help message")
+    @Option(names = { "-h", "--help" }, usageHelp = true, description = "Display this help message")
     public boolean help;
 
     @Option(names = { "-v", "--version" }, versionHelp = true, description = "Display the version of LiquidJava")
