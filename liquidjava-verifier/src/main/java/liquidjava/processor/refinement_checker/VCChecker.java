@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import liquidjava.diagnostics.errors.*;
-import liquidjava.api.CommandLineLauncher;
+import liquidjava.diagnostics.DebugLog;
 import liquidjava.diagnostics.TranslationTable;
 import liquidjava.processor.VCImplication;
 import liquidjava.processor.context.*;
@@ -52,13 +52,15 @@ public class VCChecker {
 
         TranslationTable map = new TranslationTable();
         String[] s = { Keys.WILDCARD, Keys.THIS };
-        Predicate premisesBeforeChange = joinPredicates(expectedType, mainVars, lrv, map).toConjunctions();
+        VCImplication impl = joinPredicates(expectedType, mainVars, lrv, map);
+        Predicate premisesBeforeChange = impl.toConjunctions();
         Predicate premises;
         Predicate expected;
         try {
             List<GhostState> filtered = filterGhostStatesForVariables(list, mainVars, lrv);
             premises = premisesBeforeChange.changeStatesToRefinements(filtered, s).changeAliasToRefinement(context, f);
             expected = expectedType.changeStatesToRefinements(filtered, s).changeAliasToRefinement(context, f);
+            transformChainForDebug(impl, filtered, s, f);
         } catch (LJError e) {
             // add location info to error
             if (e.getPosition() == null) {
@@ -68,7 +70,16 @@ public class VCChecker {
             throw e;
         }
         SourcePosition annotationValuePos = Utils.getFirstLJAnnotationValuePosition(element);
-        SMTResult result = verifySMTSubtype(expected, premises, annotationValuePos);
+        DebugLog.smtVerifying(annotationValuePos);
+        DebugLog.smtStart(impl, expected);
+        SMTResult result;
+        try {
+            result = dischargeToSMT(expected, premises, annotationValuePos, true);
+        } catch (RuntimeException ex) {
+            DebugLog.smtError(ex.getMessage());
+            throw ex;
+        }
+        DebugLog.smtResult(result);
         if (result.isError()) {
             throw new RefinementError(element.getPosition(), expectedType.simplify(context),
                     premisesBeforeChange.simplify(context), map, result.getCounterexample(), customMessage);
@@ -103,14 +114,14 @@ public class VCChecker {
      * @return the result of the verification, containing a counterexample if the verification fails
      */
     public SMTResult verifySMTSubtype(Predicate expected, Predicate found, SourcePosition position) throws LJError {
+        DebugLog.smtVerifying(position);
+        return dischargeToSMT(expected, found, position, false);
+    }
+
+    private SMTResult dischargeToSMT(Predicate expected, Predicate found, SourcePosition position, boolean silent)
+            throws LJError {
         try {
-            if (CommandLineLauncher.cmdArgs.debugMode) {
-                String exp = Utils.getExpressionFromPosition(position);
-                System.out.println(String.format("%s <: %s %s at %s", expected, found,
-                        exp != null ? String.format("on expression '%s'", exp) : "",
-                        position.getFile().getName() + ":" + position.getLine()));
-            }
-            return new SMTEvaluator().verifySubtype(found, expected, context);
+            return new SMTEvaluator().verifySubtype(found, expected, context, silent);
         } catch (LJError e) {
             if (e.getPosition() == null) {
                 e.setPosition(position);
@@ -134,6 +145,14 @@ public class VCChecker {
      */
     public SMTResult verifySMTSubtypeStates(Predicate type, Predicate expectedType, List<GhostState> states,
             SourcePosition position, Factory factory) throws LJError {
+        return verifySMTSubtypeStates(type, expectedType, states, position, factory, false);
+    }
+
+    public SMTResult verifySMTSubtypeStates(Predicate type, Predicate expectedType, List<GhostState> states,
+            SourcePosition position, Factory factory, boolean silent) throws LJError {
+        if (!silent) {
+            DebugLog.smtVerifying(position);
+        }
         List<RefinedVariable> lrv = new ArrayList<>(), mainVars = new ArrayList<>();
         gatherVariables(expectedType, lrv, mainVars);
         gatherVariables(type, lrv, mainVars);
@@ -142,15 +161,33 @@ public class VCChecker {
 
         TranslationTable map = new TranslationTable();
         String[] s = { Keys.WILDCARD, Keys.THIS };
-        Predicate premises = joinPredicates(expectedType, mainVars, lrv, map).toConjunctions();
+        VCImplication impl = joinPredicates(expectedType, mainVars, lrv, map);
+        Predicate premisesJoined = impl.toConjunctions();
         List<GhostState> filtered = filterGhostStatesForVariables(states, mainVars, lrv);
-        premises = Predicate.createConjunction(premises, type).changeStatesToRefinements(filtered, s)
+        Predicate premises = Predicate.createConjunction(premisesJoined, type).changeStatesToRefinements(filtered, s)
                 .changeAliasToRefinement(context, factory);
         Predicate expected = expectedType.changeStatesToRefinements(filtered, s).changeAliasToRefinement(context,
                 factory);
+        if (!silent) {
+            transformChainForDebug(impl, filtered, s, factory);
+            Predicate foundExtra = type.changeStatesToRefinements(filtered, s).changeAliasToRefinement(context,
+                    factory);
+            DebugLog.smtStart(impl, foundExtra, expected);
+        }
 
-        // check subtyping
-        return verifySMTSubtype(expected, premises, position);
+        SMTResult result;
+        try {
+            result = dischargeToSMT(expected, premises, position, true);
+        } catch (RuntimeException ex) {
+            if (!silent) {
+                DebugLog.smtError(ex.getMessage());
+            }
+            throw ex;
+        }
+        if (!silent) {
+            DebugLog.smtResult(result);
+        }
+        return result;
     }
 
     /**
@@ -188,6 +225,26 @@ public class VCChecker {
 
         // If nothing matched, keep original to avoid accidental empties
         return filtered.isEmpty() ? list : filtered;
+    }
+
+    /**
+     * Apply the same {@code changeStatesToRefinements} / {@code changeAliasToRefinement} pipeline to each node of a
+     * {@link VCImplication} chain so the structured debug print mirrors the predicates Z3 actually sees. Mutates the
+     * chain in place; safe because {@code joinPredicates} returns a clone.
+     */
+    private void transformChainForDebug(VCImplication chain, List<GhostState> filtered, String[] s, Factory f) {
+        if (!DebugLog.enabled())
+            return;
+        for (VCImplication n = chain; n != null; n = n.getNext()) {
+            if (n.getRefinement() == null)
+                continue;
+            try {
+                n.setRefinement(
+                        n.getRefinement().changeStatesToRefinements(filtered, s).changeAliasToRefinement(context, f));
+            } catch (LJError ignored) {
+                // best-effort transformation for debug; leave node as-is on failure
+            }
+        }
     }
 
     private VCImplication joinPredicates(Predicate expectedType, List<RefinedVariable> mainVars,
@@ -350,4 +407,5 @@ public class VCChecker {
         joinPredicates(expectedType, mainVars, lrv, map);
         return map;
     }
+
 }
