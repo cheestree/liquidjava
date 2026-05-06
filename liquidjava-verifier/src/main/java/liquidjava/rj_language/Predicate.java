@@ -8,12 +8,14 @@ import java.util.stream.Collectors;
 
 import liquidjava.api.CommandLineLauncher;
 import liquidjava.diagnostics.errors.LJError;
+import liquidjava.diagnostics.errors.NotFoundError;
 import liquidjava.processor.context.AliasWrapper;
 import liquidjava.processor.context.Context;
 import liquidjava.processor.context.GhostFunction;
 import liquidjava.processor.context.GhostState;
 import liquidjava.processor.facade.AliasDTO;
 import liquidjava.rj_language.ast.BinaryExpression;
+import liquidjava.rj_language.ast.Enum;
 import liquidjava.rj_language.ast.Expression;
 import liquidjava.rj_language.ast.FunctionInvocation;
 import liquidjava.rj_language.ast.GroupExpression;
@@ -25,6 +27,7 @@ import liquidjava.rj_language.ast.LiteralLong;
 import liquidjava.rj_language.ast.LiteralReal;
 import liquidjava.rj_language.ast.UnaryExpression;
 import liquidjava.rj_language.ast.Var;
+import liquidjava.utils.StaticConstants;
 import liquidjava.rj_language.opt.derivation_node.ValDerivationNode;
 import liquidjava.rj_language.opt.ExpressionSimplifier;
 import liquidjava.rj_language.parsing.RefinementsParser;
@@ -75,9 +78,55 @@ public class Predicate {
         if (!(exp instanceof GroupExpression)) {
             exp = new GroupExpression(exp);
         }
+        exp = resolveStaticFinalConstants(exp, element);
     }
 
-    /** Create a predicate with the expression true */
+    /**
+     * Walks {@code root}, decorating {@link Enum} nodes that resolve (via reflection, java.lang fallback, or imports
+     * declared in {@code context}'s compilation unit) to a {@code static final} primitive/String constant with the
+     * corresponding literal expression via {@link Enum#setResolvedLiteral}. The AST shape is preserved, so error
+     * messages and counterexamples can render the symbolic {@code Type.CONST} form; the SMT translator emits the
+     * literal binding axiom from the decoration. User-defined enums and unresolvable-but-known-type references are left
+     * untouched (the SMT side handles them as user enum constants).
+     */
+    private static Expression resolveStaticFinalConstants(Expression root, CtElement context) throws LJError {
+        List<Enum> enums = new ArrayList<>();
+        collectEnums(root, enums);
+        for (Enum en : enums) {
+            Object v = StaticConstants.resolve(en.getTypeName(), en.getConstName(), context);
+            Predicate lit = StaticConstants.asLiteralPredicate(v);
+            if (lit != null) {
+                en.setResolvedLiteral(lit.getExpression());
+                continue;
+            }
+            if (StaticConstants.userTypeExists(en.getTypeName(), context))
+                continue; // likely a user-defined enum/class — let SMT translation handle it
+            // unresolvable reference — throw an error with a helpful message and import suggestion if possible
+            SourcePosition pos = context == null ? null : Utils.getLJAnnotationPosition(context, en.toString());
+            String suggested = StaticConstants.findImportCandidate(en.getTypeName(), en.getConstName(), context);
+            String hint = suggested != null ? "Add: import " + suggested + ";"
+                    : "Add an import for '" + en.getTypeName() + "' if it is a Java class with a static final field";
+            String name = en.getTypeName() + "." + en.getConstName();
+            NotFoundError error = new NotFoundError(pos, name, "Constant");
+            error.setHint(hint);
+            throw error;
+        }
+        return root;
+    }
+
+    private static void collectEnums(Expression e, List<Enum> out) {
+        if (e instanceof Enum en)
+            out.add(en);
+        for (Expression c : e.getChildren())
+            collectEnums(c, out);
+    }
+
+    /**
+     * Wrap an already-built expression in a {@link Predicate}. Unlike the string-parsing constructors, this does NOT
+     * run static-final-constant resolution. Callers are responsible for ensuring {@code e} contains no
+     * {@link liquidjava.rj_language.ast.Enum Enum} nodes that should be resolved to literals; in practice this is fine
+     * for AST clones and rewrites that started life from the string constructor.
+     */
     public Predicate(Expression e) {
         exp = e;
     }
